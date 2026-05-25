@@ -1,13 +1,6 @@
 <div align="center">
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/banner-dark.png">
-  <img alt="Revenue Intelligence RAG Platform" src="docs/assets/banner-light.png" width="860">
-</picture>
-
-<br/><br/>
-
-# Revenue Intelligence RAG Platform
+# 🧠 Revenue Intelligence RAG Platform
 
 **Production AI infrastructure for real-time revenue leakage detection, semantic search, and natural-language analytics — built entirely inside PostgreSQL.**
 
@@ -15,7 +8,7 @@
 
 <a href="#-quick-start"><img src="https://img.shields.io/badge/Quick%20Start-5min%20setup-22C55E?style=for-the-badge&logo=rocket&logoColor=white"/></a>
 <a href="#-architecture"><img src="https://img.shields.io/badge/Architecture-4%20schemas-7C3AED?style=for-the-badge&logo=databricks&logoColor=white"/></a>
-<a href="#-live-demo"><img src="https://img.shields.io/badge/Demo-Try%20it%20live-F59E0B?style=for-the-badge&logo=codepen&logoColor=white"/></a>
+<a href="#-dataset--database-backup"><img src="https://img.shields.io/badge/Dataset-Google%20Drive-4285F4?style=for-the-badge&logo=google-drive&logoColor=white"/></a>
 
 <br/><br/>
 
@@ -104,12 +97,12 @@ All of it in a single PostgreSQL 17 container. No data warehouse. No separate ve
 
 ```mermaid
 flowchart LR
-    A["📥 Raw CSV\nIngestion"]:::step --> B["🗄️ PostgreSQL\necommerce schema"]:::step
-    B --> C["🤖 ML Scoring\nIF + LOF Ensemble"]:::step
-    C --> D["📊 Materialized\nViews ×4"]:::step
-    D --> E["🔢 Jina AI\n1024-dim Embeddings"]:::step
-    E --> F["🧩 pgvector\nRAG Store"]:::step
-    F --> G["💬 AI Agent\nText-to-SQL"]:::step
+    A["Raw CSV Ingestion"]:::step --> B["PostgreSQL ecommerce schema"]:::step
+    B --> C["ML Scoring IF and LOF Ensemble"]:::step
+    C --> D["Materialized Views x4"]:::step
+    D --> E["Jina AI 1024-dim Embeddings"]:::step
+    E --> F["pgvector RAG Store"]:::step
+    F --> G["AI Agent Text-to-SQL"]:::step
 
     classDef step fill:#1e293b,stroke:#334155,color:#f8fafc,rx:8
 ```
@@ -243,23 +236,26 @@ erDiagram
 
 ```mermaid
 flowchart TD
-    SRC["rag.documents\n(Source of Truth)"]:::src
+    SRC["rag.documents Source of Truth"]:::src
 
-    SRC -->|source_type: schema| SE["schema_embeddings"]:::emb
-    SRC -->|source_type: business_rule| BE["business_embeddings"]:::emb
-    SRC -->|source_type: metric| ME["metrics_embeddings"]:::emb
-    SRC -->|source_type: review| RE["review_embeddings"]:::emb
+    SRC -->|schema| SE["schema_embeddings"]:::emb
+    SRC -->|business_rule| BE["business_embeddings"]:::emb
+    SRC -->|metric| ME["metrics_embeddings"]:::emb
+    SRC -->|review| RE["review_embeddings"]:::emb
 
-    SE & BE & ME & RE --> HS["🔀 Hybrid Search\nBM25 × 0.4 + Cosine × 0.6"]:::fuse
+    SE --> HS["Hybrid Search BM25 and Cosine"]:::fuse
+    BE --> HS
+    ME --> HS
+    RE --> HS
 
-    HS --> PW["Priority Weighting\n+ Source Diversity cap\n(max 2 per source_type)"]:::rank
-    PW --> CTX["Top-k → LLM Context"]:::out
+    HS --> PW["Priority Weighting and Source Diversity"]:::rank
+    PW --> CTX["Top-k to LLM Context"]:::out
 
-    classDef src  fill:#1e3a5f,stroke:#2563eb,color:#eff6ff
-    classDef emb  fill:#1e3a2f,stroke:#16a34a,color:#f0fdf4
+    classDef src fill:#1e3a5f,stroke:#2563eb,color:#eff6ff
+    classDef emb fill:#1e3a2f,stroke:#16a34a,color:#f0fdf4
     classDef fuse fill:#3b2a00,stroke:#ca8a04,color:#fefce8
     classDef rank fill:#2a1a3e,stroke:#7c3aed,color:#faf5ff
-    classDef out  fill:#1a2e1a,stroke:#22c55e,color:#f0fdf4
+    classDef out fill:#1a2e1a,stroke:#22c55e,color:#f0fdf4
 ```
 
 ### Document Types & Priorities
@@ -375,30 +371,34 @@ sequenceDiagram
 
 ```mermaid
 flowchart TD
-    Q[User Query] --> I{Intent\nClassification}
+    Q[User Query] --> I{Intent Classification}
 
-    I -->|simple_lookup|         MV1[mv_leakage_dashboard]
-    I -->|aggregation|           MV2[mv_leakage_by_scenario]
-    I -->|trend_analysis|        MV3[mv_monthly_leakage]
-    I -->|seller_risk|           MV4[mv_seller_risk]
+    I -->|simple_lookup| MV1[mv_leakage_dashboard]
+    I -->|aggregation| MV2[mv_leakage_by_scenario]
+    I -->|trend_analysis| MV3[mv_monthly_leakage]
+    I -->|seller_risk| MV4[mv_seller_risk]
     I -->|anomaly_investigation| RAG[Hybrid RAG Search]
-    I -->|sentiment_analysis|    RE[review_embeddings]
+    I -->|sentiment_analysis| RE[review_embeddings]
 
-    MV1 & MV2 & MV3 & MV4 --> SQL[SQL Generation]
-    RAG & RE --> CTX[Context Injection]
+    MV1 --> SQL[SQL Generation]
+    MV2 --> SQL
+    MV3 --> SQL
+    MV4 --> SQL
+    RAG --> CTX[Context Injection]
+    RE --> CTX
 
-    SQL --> G{sql_guard\nValidation}
+    SQL --> G{sql_guard Validation}
     CTX --> LLM[LLM Response]
 
-    G -->|PASS|  EX[Execute + Log]
-    G -->|BLOCK| ER[Error + Suggestion]
+    G -->|PASS| EX[Execute and Log]
+    G -->|BLOCK| ER[Error and Suggestion]
 
     EX --> LLM
     LLM --> R[Response to User]
 
-    style G   fill:#78350f,stroke:#f59e0b,color:#fef3c7
-    style ER  fill:#7f1d1d,stroke:#ef4444,color:#fef2f2
-    style R   fill:#14532d,stroke:#22c55e,color:#f0fdf4
+    style G fill:#f59e0b,stroke:#d97706
+    style ER fill:#ef4444,stroke:#dc2626
+    style R fill:#22c55e,stroke:#16a34a
 ```
 
 ### SQL Guard in Action
