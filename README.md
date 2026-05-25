@@ -836,7 +836,7 @@ MIT — see [LICENSE](LICENSE).
 ## 👤 Author
 
 **Mohamed Waleed Elmasry**
-AI Engineer & Database Architect
+AI Engineer & BI Developer
 
 [![GitHub](https://img.shields.io/badge/GitHub-MohamedWaleedElmasry-181717?style=flat-square&logo=github)](https://github.com/MohamedWaleedElmasry)
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-0A66C2?style=flat-square&logo=linkedin)](https://www.linkedin.com/in/mohamedwaleed-data/)
