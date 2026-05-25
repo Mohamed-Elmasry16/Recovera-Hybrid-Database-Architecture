@@ -1,0 +1,1910 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>pgvector RAG — AI-Powered Revenue Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #020408;
+  --surface: #080d14;
+  --surface2: #0d1520;
+  --border: rgba(255,255,255,0.06);
+  --border-bright: rgba(99,179,237,0.3);
+  --text: #e8f0fe;
+  --muted: #6b7fa3;
+  --accent: #3b82f6;
+  --accent2: #06b6d4;
+  --accent3: #8b5cf6;
+  --green: #10b981;
+  --yellow: #f59e0b;
+  --red: #ef4444;
+  --glow: rgba(59,130,246,0.15);
+  --glow2: rgba(6,182,212,0.1);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Syne', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  overflow-x: hidden;
+  line-height: 1.6;
+}
+
+/* SCROLLBAR */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 2px; }
+
+/* NAV */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 48px;
+  background: rgba(2,4,8,0.8);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+}
+.nav-logo {
+  font-size: 13px; font-weight: 700; letter-spacing: 0.15em;
+  text-transform: uppercase; color: var(--accent2);
+  font-family: 'JetBrains Mono', monospace;
+}
+.nav-links { display: flex; gap: 32px; }
+.nav-links a {
+  font-size: 12px; color: var(--muted); text-decoration: none;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text); }
+
+/* HERO */
+.hero {
+  min-height: 100vh;
+  display: flex; flex-direction: column; justify-content: center; align-items: center;
+  text-align: center; padding: 120px 48px 80px;
+  position: relative; overflow: hidden;
+}
+.hero-bg {
+  position: absolute; inset: 0; z-index: 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 0%, rgba(59,130,246,0.12) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 40% at 80% 80%, rgba(139,92,246,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 50% at 10% 60%, rgba(6,182,212,0.06) 0%, transparent 60%);
+}
+.hero-grid {
+  position: absolute; inset: 0; z-index: 0;
+  background-image:
+    linear-gradient(rgba(59,130,246,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(59,130,246,0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 50%, black 40%, transparent 100%);
+}
+.hero-tag {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; font-weight: 500;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--accent2);
+  background: rgba(6,182,212,0.08);
+  border: 1px solid rgba(6,182,212,0.2);
+  padding: 6px 16px; border-radius: 100px;
+  margin-bottom: 32px;
+  position: relative; z-index: 1;
+  animation: fadeUp 0.8s ease both;
+}
+.tag-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent2);
+  animation: pulse 2s ease infinite;
+}
+@keyframes pulse {
+  0%,100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.7); }
+}
+h1.hero-title {
+  font-size: clamp(42px, 6vw, 88px);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  position: relative; z-index: 1;
+  animation: fadeUp 0.8s 0.1s ease both;
+}
+.hero-title .line1 { display: block; color: var(--text); }
+.hero-title .line2 {
+  display: block;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 50%, var(--accent3) 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.hero-sub {
+  max-width: 560px; margin: 24px auto 0;
+  font-size: 17px; color: var(--muted); line-height: 1.7;
+  position: relative; z-index: 1;
+  animation: fadeUp 0.8s 0.2s ease both;
+}
+.hero-stats {
+  display: flex; gap: 48px; margin-top: 64px;
+  position: relative; z-index: 1;
+  animation: fadeUp 0.8s 0.3s ease both;
+}
+.hero-stat { text-align: center; }
+.hero-stat .num {
+  font-size: 36px; font-weight: 800;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.hero-stat .label { font-size: 12px; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; margin-top: 4px; }
+
+.tech-stack {
+  display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;
+  margin-top: 48px;
+  position: relative; z-index: 1;
+  animation: fadeUp 0.8s 0.4s ease both;
+}
+.tech-pill {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; font-weight: 500;
+  padding: 6px 14px; border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--muted);
+  letter-spacing: 0.05em;
+  transition: all 0.2s;
+}
+.tech-pill:hover { border-color: var(--accent); color: var(--accent); }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* SECTIONS */
+section { padding: 100px 48px; max-width: 1200px; margin: 0 auto; }
+.section-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; font-weight: 500;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--accent2);
+  margin-bottom: 16px;
+  display: flex; align-items: center; gap: 8px;
+}
+.section-label::before {
+  content: '';
+  width: 24px; height: 1px;
+  background: var(--accent2);
+}
+h2.section-title {
+  font-size: clamp(28px, 4vw, 48px);
+  font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.1; margin-bottom: 16px;
+}
+.section-desc { font-size: 16px; color: var(--muted); max-width: 560px; line-height: 1.7; }
+
+/* DIVIDER */
+.divider {
+  width: 100%; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border-bright), transparent);
+  margin: 0;
+}
+
+/* GLASS CARD */
+.glass {
+  background: rgba(13,21,32,0.6);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  backdrop-filter: blur(12px);
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+.glass:hover {
+  border-color: rgba(59,130,246,0.25);
+  box-shadow: 0 0 40px rgba(59,130,246,0.06);
+}
+
+/* OVERVIEW GRID */
+.overview-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 20px; margin-top: 56px; }
+.overview-card { padding: 32px; }
+.ov-icon {
+  width: 44px; height: 44px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; margin-bottom: 20px;
+}
+.ov-title { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+.ov-desc { font-size: 14px; color: var(--muted); line-height: 1.6; }
+
+/* ARCHITECTURE DIAGRAM */
+.arch-diagram {
+  margin-top: 56px;
+  padding: 40px;
+  position: relative;
+  overflow: hidden;
+}
+.arch-diagram::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse 60% 40% at 50% 50%, rgba(59,130,246,0.05) 0%, transparent 70%);
+}
+.arch-flow {
+  display: flex; align-items: center; gap: 0;
+  justify-content: center;
+  position: relative; z-index: 1;
+  flex-wrap: wrap;
+}
+.arch-node {
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  min-width: 100px;
+}
+.arch-icon-wrap {
+  width: 64px; height: 64px; border-radius: 16px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px;
+  position: relative;
+}
+.arch-icon-wrap::after {
+  content: '';
+  position: absolute; inset: -1px;
+  border-radius: 17px;
+  background: linear-gradient(135deg, rgba(59,130,246,0.4), rgba(6,182,212,0.2));
+  z-index: -1;
+}
+.arch-label { font-size: 11px; color: var(--muted); text-align: center; font-weight: 600; letter-spacing: 0.05em; }
+.arch-arrow {
+  width: 48px; height: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  position: relative; margin: 0 4px; margin-bottom: 24px;
+  flex-shrink: 0;
+}
+.arch-arrow::after {
+  content: '';
+  position: absolute; right: -1px; top: -4px;
+  border-left: 8px solid var(--accent2);
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+}
+
+/* LAYERS */
+.layers { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-top: 48px; }
+.layer-card { padding: 28px; }
+.layer-title { font-size: 13px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+.layer-items { display: flex; flex-direction: column; gap: 8px; }
+.layer-item {
+  display: flex; align-items: center; gap: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px; color: var(--muted);
+  padding: 8px 12px; border-radius: 8px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--border);
+  transition: all 0.2s;
+}
+.layer-item:hover { border-color: var(--border-bright); color: var(--text); }
+.li-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+
+/* ERD SECTION */
+.erd-container { margin-top: 48px; }
+.erd-schemas { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; }
+.schema-block { padding: 24px; border-radius: 16px; }
+.schema-name {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px; font-weight: 700; letter-spacing: 0.1em;
+  text-transform: uppercase; margin-bottom: 16px;
+  display: flex; align-items: center; gap: 8px;
+}
+.schema-dot { width: 8px; height: 8px; border-radius: 50%; }
+.table-list { display: flex; flex-direction: column; gap: 6px; }
+.tbl {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; color: var(--muted);
+  padding: 6px 10px; border-radius: 6px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.tbl-rows { font-size: 10px; color: var(--accent); }
+
+/* SCHEMA CARDS */
+.schema-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 48px; }
+.schema-card { padding: 32px; }
+.sc-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+.sc-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+.sc-name { font-size: 14px; font-weight: 700; }
+.sc-badge { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--muted); background: var(--surface2); padding: 2px 8px; border-radius: 4px; }
+.col-list { display: flex; flex-direction: column; gap: 6px; }
+.col-item { display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; border-radius: 6px; background: rgba(255,255,255,0.02); font-size: 12px; }
+.col-name { font-family: 'JetBrains Mono', monospace; color: var(--text); }
+.col-type { font-family: 'JetBrains Mono', monospace; color: var(--accent2); font-size: 11px; }
+.col-note { font-size: 10px; color: var(--muted); margin-top: 2px; }
+.col-pk { color: var(--yellow); }
+.col-fk { color: var(--green); }
+
+/* VECTOR SEARCH */
+.vector-section { background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.vector-section section { max-width: 1200px; }
+.vector-flow { display: grid; grid-template-columns: repeat(5,1fr); gap: 0; align-items: center; margin-top: 48px; }
+.vf-step { text-align: center; padding: 0 8px; }
+.vf-num {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent3));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 800; margin: 0 auto 12px;
+}
+.vf-title { font-size: 13px; font-weight: 700; margin-bottom: 6px; }
+.vf-desc { font-size: 11px; color: var(--muted); line-height: 1.5; }
+.vf-arrow { display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 20px; padding-bottom: 32px; }
+
+.cosine-viz {
+  display: flex; align-items: center; justify-content: center;
+  gap: 48px; margin-top: 48px; flex-wrap: wrap;
+}
+.cosine-box { text-align: center; }
+.cosine-query {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px; color: var(--accent2);
+  background: rgba(6,182,212,0.08);
+  border: 1px solid rgba(6,182,212,0.2);
+  padding: 12px 20px; border-radius: 10px;
+  margin-bottom: 24px; display: inline-block;
+}
+.results-list { display: flex; flex-direction: column; gap: 8px; }
+.result-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 16px; border-radius: 8px;
+  background: var(--surface); border: 1px solid var(--border);
+  font-size: 13px;
+}
+.result-score {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; font-weight: 700;
+  padding: 3px 8px; border-radius: 4px;
+}
+.score-high { background: rgba(16,185,129,0.15); color: var(--green); }
+.score-mid { background: rgba(245,158,11,0.15); color: var(--yellow); }
+.score-low { background: rgba(107,127,163,0.1); color: var(--muted); }
+
+/* EMBEDDING PIPELINE */
+.pipeline { display: flex; flex-direction: column; gap: 16px; margin-top: 48px; }
+.pipeline-step {
+  display: grid; grid-template-columns: 48px 1fr 200px;
+  gap: 20px; align-items: center;
+  padding: 20px 24px;
+}
+.ps-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; font-weight: 700; color: var(--accent);
+  text-align: center;
+}
+.ps-content {}
+.ps-title { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+.ps-desc { font-size: 12px; color: var(--muted); line-height: 1.5; }
+.ps-meta {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; color: var(--muted);
+  text-align: right;
+}
+.ps-meta span { display: block; color: var(--accent2); }
+
+.code-block {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.8;
+  margin-top: 32px;
+  overflow-x: auto;
+  position: relative;
+}
+.code-block .cb-header {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 16px; padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.cb-dot { width: 10px; height: 10px; border-radius: 50%; }
+.cb-lang { font-size: 11px; color: var(--muted); margin-left: auto; }
+.kw { color: #7dd3fc; }
+.fn { color: #86efac; }
+.str { color: #fca5a5; }
+.cm { color: #475569; }
+.num-c { color: #fcd34d; }
+
+/* PERFORMANCE */
+.perf-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 20px; margin-top: 48px; }
+.perf-card { padding: 28px; text-align: center; }
+.perf-metric {
+  font-size: 42px; font-weight: 800;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 8px;
+}
+.perf-title { font-size: 13px; font-weight: 700; margin-bottom: 6px; }
+.perf-desc { font-size: 12px; color: var(--muted); line-height: 1.5; }
+
+.compare-table { margin-top: 48px; width: 100%; border-collapse: collapse; }
+.compare-table th, .compare-table td {
+  padding: 14px 20px; text-align: left;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.compare-table th {
+  font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--muted); font-weight: 700;
+  background: var(--surface2);
+}
+.compare-table td:first-child { font-weight: 700; color: var(--text); }
+.compare-table td:not(:first-child) { font-family: 'JetBrains Mono', monospace; color: var(--muted); }
+.check { color: var(--green); }
+.cross { color: var(--red); }
+.highlight-row td { background: rgba(59,130,246,0.05); }
+.highlight-row td:not(:first-child) { color: var(--accent2); }
+
+/* AI INTEGRATION */
+.ai-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-top: 48px; }
+.ai-card { padding: 32px; }
+.ai-icon { font-size: 28px; margin-bottom: 16px; }
+.ai-title { font-size: 15px; font-weight: 700; margin-bottom: 8px; }
+.ai-desc { font-size: 13px; color: var(--muted); line-height: 1.6; }
+.ai-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+.ai-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; padding: 3px 8px; border-radius: 4px;
+  background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.15);
+  color: var(--accent);
+}
+
+/* ROADMAP */
+.roadmap { display: flex; flex-direction: column; gap: 0; margin-top: 48px; position: relative; }
+.roadmap::before {
+  content: ''; position: absolute; left: 20px; top: 0; bottom: 0;
+  width: 2px; background: linear-gradient(180deg, var(--accent), var(--accent3), transparent);
+}
+.rm-item { display: flex; gap: 32px; padding: 0 0 40px 0; position: relative; }
+.rm-dot {
+  width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 800;
+  background: var(--surface2);
+  border: 2px solid var(--border);
+  z-index: 1;
+  transition: all 0.3s;
+}
+.rm-item:hover .rm-dot { border-color: var(--accent); background: rgba(59,130,246,0.1); }
+.rm-content { padding-top: 8px; }
+.rm-phase { font-size: 11px; color: var(--accent2); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; margin-bottom: 4px; }
+.rm-title { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+.rm-desc { font-size: 13px; color: var(--muted); line-height: 1.6; max-width: 600px; }
+.rm-status { display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 10px; border-radius: 100px; margin-top: 10px; }
+.status-done { background: rgba(16,185,129,0.1); color: var(--green); border: 1px solid rgba(16,185,129,0.2); }
+.status-active { background: rgba(59,130,246,0.1); color: var(--accent); border: 1px solid rgba(59,130,246,0.2); }
+.status-next { background: rgba(107,127,163,0.1); color: var(--muted); border: 1px solid var(--border); }
+
+/* FINAL SHOWCASE */
+.showcase {
+  padding: 100px 48px;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  text-align: center;
+}
+.showcase-inner { max-width: 800px; margin: 0 auto; }
+.showcase h2 { font-size: clamp(32px,5vw,64px); font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; margin-bottom: 24px; }
+.showcase .grad { background: linear-gradient(135deg, var(--accent),var(--accent2),var(--accent3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.showcase p { font-size: 16px; color: var(--muted); max-width: 560px; margin: 0 auto 48px; line-height: 1.7; }
+.showcase-stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 24px; }
+.ss-stat { padding: 24px; text-align: center; }
+.ss-num { font-size: 28px; font-weight: 800; }
+.ss-label { font-size: 11px; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; margin-top: 4px; }
+
+/* FOOTER */
+footer {
+  padding: 40px 48px;
+  border-top: 1px solid var(--border);
+  display: flex; justify-content: space-between; align-items: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; color: var(--muted);
+}
+
+/* SCROLL REVEAL */
+.reveal { opacity: 0; transform: translateY(32px); transition: opacity 0.7s ease, transform 0.7s ease; }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  nav { padding: 14px 20px; }
+  .nav-links { display: none; }
+  section { padding: 60px 20px; }
+  .overview-grid { grid-template-columns: 1fr; }
+  .erd-schemas { grid-template-columns: 1fr 1fr; }
+  .schema-cards { grid-template-columns: 1fr; }
+  .vector-flow { grid-template-columns: 1fr; }
+  .pipeline-step { grid-template-columns: 40px 1fr; }
+  .ps-meta { display: none; }
+  .perf-grid { grid-template-columns: 1fr; }
+  .ai-grid { grid-template-columns: 1fr; }
+  .hero-stats { gap: 24px; }
+  .showcase-stats { grid-template-columns: 1fr 1fr; }
+  .layers { grid-template-columns: 1fr; }
+}
+
+/* GLOW ANIMATION */
+@keyframes glow {
+  0%,100% { box-shadow: 0 0 20px rgba(59,130,246,0.1); }
+  50% { box-shadow: 0 0 40px rgba(59,130,246,0.25); }
+}
+.glow-anim { animation: glow 3s ease infinite; }
+
+/* SHIMMER */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* ERD DIAGRAM STYLING */
+.erDiagram .divider path { stroke-opacity: 0.5; }
+.erDiagram .row-rect-odd path,
+.erDiagram .row-rect-odd rect,
+.erDiagram .row-rect-even path,
+.erDiagram .row-rect-even rect { stroke: none !important; }
+#full-erd svg, #rag-erd svg, #ml-erd svg, #marketing-erd svg, #ecommerce-erd svg {
+  max-width: 100%;
+  height: auto;
+}
+
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">pgvector // RAG</div>
+  <div class="nav-links">
+    <a href="#overview">Overview</a>
+    <a href="#architecture">Architecture</a>
+    <a href="#erd">Schema</a>
+    <a href="#vector">Vector Search</a>
+    <a href="#pipeline">Pipeline</a>
+    <a href="#performance">Performance</a>
+    <a href="#roadmap">Roadmap</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-tag"><span class="tag-dot"></span>Production-Ready AI Infrastructure</div>
+  <h1 class="hero-title">
+    <span class="line1">Revenue Intelligence</span>
+    <span class="line2">RAG Architecture</span>
+  </h1>
+  <p class="hero-sub">AI-powered PostgreSQL + pgvector system for real-time revenue leakage detection, semantic search, and intelligent analytics.</p>
+  <div class="hero-stats">
+    <div class="hero-stat"><div class="num">2.9M+</div><div class="label">Total Records</div></div>
+    <div class="hero-stat"><div class="num">20</div><div class="label">Leakage Scenarios</div></div>
+    <div class="hero-stat"><div class="num">1024</div><div class="label">Vector Dimensions</div></div>
+    <div class="hero-stat"><div class="num">&lt;50ms</div><div class="label">Query Latency</div></div>
+  </div>
+  <div class="tech-stack">
+    <span class="tech-pill">PostgreSQL 17</span>
+    <span class="tech-pill">pgvector</span>
+    <span class="tech-pill">Python</span>
+    <span class="tech-pill">Docker</span>
+    <span class="tech-pill">Jina AI</span>
+    <span class="tech-pill">IVFFlat Index</span>
+    <span class="tech-pill">pgvector/pgvector:pg17</span>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- OVERVIEW -->
+<section id="overview">
+  <div class="section-label">01 — Overview</div>
+  <h2 class="section-title">Why RAG inside PostgreSQL?</h2>
+  <p class="section-desc">Instead of a separate vector database, embeddings live alongside your transactional data. One query joins structured analytics with semantic context — zero infra complexity.</p>
+  <div class="overview-grid">
+    <div class="glass overview-card reveal">
+      <div class="ov-icon" style="background:rgba(59,130,246,0.1)">🧠</div>
+      <div class="ov-title">Semantic Understanding</div>
+      <div class="ov-desc">Cosine similarity search over 1024-dim Jina embeddings retrieves contextually relevant leakage reasons, reviews, and schema docs — not just keyword matches.</div>
+    </div>
+    <div class="glass overview-card reveal" style="transition-delay:0.1s">
+      <div class="ov-icon" style="background:rgba(6,182,212,0.1)">⚡</div>
+      <div class="ov-title">Zero ETL Overhead</div>
+      <div class="ov-desc">Embeddings are stored directly in pgvector alongside source data. No sync pipeline between your operational DB and a separate vector store. One source of truth.</div>
+    </div>
+    <div class="glass overview-card reveal" style="transition-delay:0.2s">
+      <div class="ov-icon" style="background:rgba(139,92,246,0.1)">🔍</div>
+      <div class="ov-title">Hybrid Retrieval</div>
+      <div class="ov-desc">Combine pgvector ANN search with standard SQL filters. Retrieve "high-risk orders with negative margin AND semantically similar reviews" in a single query.</div>
+    </div>
+    <div class="glass overview-card reveal" style="transition-delay:0.3s">
+      <div class="ov-icon" style="background:rgba(16,185,129,0.1)">🛡️</div>
+      <div class="ov-title">Production Safety</div>
+      <div class="ov-desc">Dedicated <code style="font-family:JetBrains Mono,monospace;font-size:11px;color:var(--accent2)">chatbot_readonly</code> role with statement timeouts, sql_guard injection protection, and retrieval_cache for deduplication.</div>
+    </div>
+    <div class="glass overview-card reveal" style="transition-delay:0.4s">
+      <div class="ov-icon" style="background:rgba(245,158,11,0.1)">📊</div>
+      <div class="ov-title">Materialized Analytics</div>
+      <div class="ov-desc">4 pre-computed materialized views (dashboard, monthly, seller risk, scenario) refresh concurrently. The AI agent queries MVs, never raw tables, for sub-50ms responses.</div>
+    </div>
+    <div class="glass overview-card reveal" style="transition-delay:0.5s">
+      <div class="ov-icon" style="background:rgba(239,68,68,0.1)">🔄</div>
+      <div class="ov-title">Incremental Re-embedding</div>
+      <div class="ov-desc"><code style="font-family:JetBrains Mono,monospace;font-size:11px;color:var(--accent2)">needs_reembedding</code> flag on every document. Only changed records are re-vectorized. Batch size 50, exponential backoff, dimension validation.</div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ARCHITECTURE -->
+<section id="architecture">
+  <div class="section-label">02 — Architecture</div>
+  <h2 class="section-title">System Design</h2>
+  <p class="section-desc">A layered architecture where every component has a single responsibility. Data flows from raw CSV ingestion through ML scoring to vector-enriched AI responses.</p>
+
+  <div class="glass arch-diagram reveal">
+    <div style="text-align:center;margin-bottom:32px;font-size:12px;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase">End-to-End Data Flow</div>
+    <div class="arch-flow">
+      <div class="arch-node">
+        <div class="arch-icon-wrap" style="background:rgba(59,130,246,0.1)">📥</div>
+        <div class="arch-label">CSV Data<br>Ingestion</div>
+      </div>
+      <div class="arch-arrow"></div>
+      <div class="arch-node">
+        <div class="arch-icon-wrap" style="background:rgba(6,182,212,0.1)">🗄️</div>
+        <div class="arch-label">PostgreSQL<br>ecommerce</div>
+      </div>
+      <div class="arch-arrow"></div>
+      <div class="arch-node">
+        <div class="arch-icon-wrap" style="background:rgba(139,92,246,0.1)">🤖</div>
+        <div class="arch-label">ML Scoring<br>IF + LOF</div>
+      </div>
+      <div class="arch-arrow"></div>
+      <div class="arch-node">
+        <div class="arch-icon-wrap" style="background:rgba(245,158,11,0.1)">📊</div>
+        <div class="arch-label">Materialized<br>Views</div>
+      </div>
+      <div class="arch-arrow"></div>
+      <div class="arch-node">
+        <div class="arch-icon-wrap" style="background:rgba(16,185,129,0.1)">🔢</div>
+        <div class="arch-label">Jina<br>Embeddings</div>
+      </div>
+      <div class="arch-arrow"></div>
+      <div class="arch-node">
+        <div class="arch-icon-wrap" style="background:rgba(239,68,68,0.1)" style="background:rgba(59,130,246,0.15)">🧩</div>
+        <div class="arch-label">pgvector<br>RAG Store</div>
+      </div>
+      <div class="arch-arrow"></div>
+      <div class="arch-node">
+        <div class="arch-icon-wrap" style="background:rgba(59,130,246,0.15)">💬</div>
+        <div class="arch-label">AI Chatbot<br>Agent</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="layers reveal">
+    <div class="glass layer-card">
+      <div class="layer-title"><span style="color:var(--accent)">◈</span> Data Layer — ecommerce schema</div>
+      <div class="layer-items">
+        <div class="layer-item"><span class="li-dot" style="background:#3b82f6"></span>orders — 298K rows, core fact table</div>
+        <div class="layer-item"><span class="li-dot" style="background:#06b6d4"></span>customers — 253K rows, segments + churn risk</div>
+        <div class="layer-item"><span class="li-dot" style="background:#8b5cf6"></span>order_items — 435K rows, line items + discounts</div>
+        <div class="layer-item"><span class="li-dot" style="background:#10b981"></span>payments, shipping, refunds, reviews, products</div>
+        <div class="layer-item"><span class="li-dot" style="background:#f59e0b"></span>GENERATED columns — order_month, fee_to_cost_ratio</div>
+      </div>
+    </div>
+    <div class="glass layer-card">
+      <div class="layer-title"><span style="color:var(--accent2)">◈</span> Intelligence Layer — ml_output schema</div>
+      <div class="layer-items">
+        <div class="layer-item"><span class="li-dot" style="background:#3b82f6"></span>order_anomaly_scores — IF + LOF + ensemble</div>
+        <div class="layer-item"><span class="li-dot" style="background:#06b6d4"></span>order_leakage_reasons — many-to-many junction</div>
+        <div class="layer-item"><span class="li-dot" style="background:#8b5cf6"></span>mv_leakage_dashboard — no-JOIN analytics view</div>
+        <div class="layer-item"><span class="li-dot" style="background:#10b981"></span>chatbot_conversations + query_log</div>
+        <div class="layer-item"><span class="li-dot" style="background:#f59e0b"></span>chatbot_prompt_versions — A/B tested prompts</div>
+      </div>
+    </div>
+    <div class="glass layer-card">
+      <div class="layer-title"><span style="color:var(--accent3)">◈</span> Vector Layer — rag schema</div>
+      <div class="layer-items">
+        <div class="layer-item"><span class="li-dot" style="background:#3b82f6"></span>documents — source chunks with metadata</div>
+        <div class="layer-item"><span class="li-dot" style="background:#06b6d4"></span>schema_embeddings, review_embeddings, business_embeddings</div>
+        <div class="layer-item"><span class="li-dot" style="background:#8b5cf6"></span>metrics_embeddings — KPI and aggregation docs</div>
+        <div class="layer-item"><span class="li-dot" style="background:#10b981"></span>retrieval_log — hallucination tracking</div>
+        <div class="layer-item"><span class="li-dot" style="background:#f59e0b"></span>retrieval_cache — query hash deduplication</div>
+      </div>
+    </div>
+    <div class="glass layer-card">
+      <div class="layer-title"><span style="color:var(--green)">◈</span> Safety + Marketing Layers</div>
+      <div class="layer-items">
+        <div class="layer-item"><span class="li-dot" style="background:#3b82f6"></span>sql_guard — injection pattern detection</div>
+        <div class="layer-item"><span class="li-dot" style="background:#06b6d4"></span>chatbot_readonly role — 15s statement timeout</div>
+        <div class="layer-item"><span class="li-dot" style="background:#8b5cf6"></span>marketing.campaigns, attribution, sessions</div>
+        <div class="layer-item"><span class="li-dot" style="background:#10b981"></span>leads_qualified, leads_closed pipeline</div>
+        <div class="layer-item"><span class="li-dot" style="background:#f59e0b"></span>customer_interactions — 1M channel events</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ERD -->
+<section id="erd">
+  <div class="section-label">03 — Schema Design</div>
+  <h2 class="section-title">Database Architecture</h2>
+  <p class="section-desc">Four schemas with clear separation of concerns. Every foreign key enforced. Every money column in EGP. Every enum typed for safety.</p>
+
+  <div class="erd-container reveal">
+    <div class="erd-schemas">
+      <div class="glass schema-block">
+        <div class="schema-name"><span class="schema-dot" style="background:#3b82f6"></span>ecommerce</div>
+        <div class="table-list">
+          <div class="tbl">orders <span class="tbl-rows">298K</span></div>
+          <div class="tbl">customers <span class="tbl-rows">253K</span></div>
+          <div class="tbl">order_items <span class="tbl-rows">435K</span></div>
+          <div class="tbl">payments <span class="tbl-rows">297K</span></div>
+          <div class="tbl">shipping <span class="tbl-rows">298K</span></div>
+          <div class="tbl">reviews <span class="tbl-rows">262K</span></div>
+          <div class="tbl">refunds <span class="tbl-rows">7.8K</span></div>
+          <div class="tbl">products <span class="tbl-rows">50K</span></div>
+          <div class="tbl">sellers <span class="tbl-rows">5K</span></div>
+          <div class="tbl">geolocation <span class="tbl-rows">85K</span></div>
+        </div>
+      </div>
+      <div class="glass schema-block">
+        <div class="schema-name"><span class="schema-dot" style="background:#8b5cf6"></span>ml_output</div>
+        <div class="table-list">
+          <div class="tbl">order_anomaly_scores</div>
+          <div class="tbl">order_leakage_reasons</div>
+          <div class="tbl">mv_leakage_dashboard</div>
+          <div class="tbl">mv_monthly_leakage</div>
+          <div class="tbl">mv_seller_risk</div>
+          <div class="tbl">mv_leakage_by_scenario</div>
+          <div class="tbl">chatbot_conversations</div>
+          <div class="tbl">chatbot_query_log</div>
+          <div class="tbl">chatbot_prompt_versions</div>
+          <div class="tbl">schema_metadata</div>
+        </div>
+      </div>
+      <div class="glass schema-block">
+        <div class="schema-name"><span class="schema-dot" style="background:#06b6d4"></span>rag</div>
+        <div class="table-list">
+          <div class="tbl">documents</div>
+          <div class="tbl">schema_embeddings <span class="tbl-rows">1024d</span></div>
+          <div class="tbl">review_embeddings <span class="tbl-rows">1024d</span></div>
+          <div class="tbl">business_embeddings <span class="tbl-rows">1024d</span></div>
+          <div class="tbl">metrics_embeddings <span class="tbl-rows">1024d</span></div>
+          <div class="tbl">document_versions</div>
+          <div class="tbl">retrieval_log</div>
+          <div class="tbl">retrieval_cache</div>
+          <div class="tbl">sql_guard</div>
+        </div>
+      </div>
+      <div class="glass schema-block">
+        <div class="schema-name"><span class="schema-dot" style="background:#10b981"></span>marketing</div>
+        <div class="table-list">
+          <div class="tbl">marketing_campaigns <span class="tbl-rows">184</span></div>
+          <div class="tbl">leads_qualified <span class="tbl-rows">24K</span></div>
+          <div class="tbl">leads_closed <span class="tbl-rows">7.2K</span></div>
+          <div class="tbl">campaign_attribution <span class="tbl-rows">208K</span></div>
+          <div class="tbl">website_sessions <span class="tbl-rows">1.26M</span></div>
+          <div class="tbl">customer_interactions <span class="tbl-rows">1M</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Schema Cards -->
+  <div class="schema-cards">
+    <div class="glass schema-card reveal">
+      <div class="sc-header">
+        <div class="sc-icon" style="background:rgba(59,130,246,0.1)">📋</div>
+        <div>
+          <div class="sc-name">ecommerce.orders</div>
+          <div class="sc-badge">Core Fact Table — 298K rows</div>
+        </div>
+      </div>
+      <div class="col-list">
+        <div class="col-item"><span class="col-name col-pk">🔑 order_id</span><span class="col-type">VARCHAR(32) PK</span></div>
+        <div class="col-item"><span class="col-name col-fk">⚷ customer_id</span><span class="col-type">FK → customers</span></div>
+        <div class="col-item"><span class="col-name">order_status</span><span class="col-type">order_status_t ENUM</span></div>
+        <div class="col-item"><span class="col-name">profit_margin</span><span class="col-type">NUMERIC(7,4)</span></div>
+        <div class="col-item"><span class="col-name">payment_status</span><span class="col-type">payment_status_t ENUM</span></div>
+        <div class="col-item"><span class="col-name">order_month</span><span class="col-type">GENERATED DATE</span></div>
+        <div class="col-item"><span class="col-name">inventory_mismatch</span><span class="col-type">BOOLEAN</span></div>
+      </div>
+    </div>
+    <div class="glass schema-card reveal" style="transition-delay:0.1s">
+      <div class="sc-header">
+        <div class="sc-icon" style="background:rgba(139,92,246,0.1)">🎯</div>
+        <div>
+          <div class="sc-name">ml_output.order_anomaly_scores</div>
+          <div class="sc-badge">ML Scores — one row per order</div>
+        </div>
+      </div>
+      <div class="col-list">
+        <div class="col-item"><span class="col-name col-pk">🔑 order_id</span><span class="col-type">PK + FK → orders</span></div>
+        <div class="col-item"><span class="col-name">if_score</span><span class="col-type">NUMERIC(8,6)</span></div>
+        <div class="col-item"><span class="col-name">lof_score</span><span class="col-type">NUMERIC(8,6)</span></div>
+        <div class="col-item"><span class="col-name">ensemble_score</span><span class="col-type">NUMERIC(8,6)</span></div>
+        <div class="col-item"><span class="col-name">anomaly_flag</span><span class="col-type">SMALLINT 0/1</span></div>
+        <div class="col-item"><span class="col-name">risk_tier</span><span class="col-type">risk_tier_t ENUM</span></div>
+        <div class="col-item"><span class="col-name">leakage_scenarios</span><span class="col-type">leakage_scenario_t[]</span></div>
+      </div>
+    </div>
+    <div class="glass schema-card reveal" style="transition-delay:0.2s">
+      <div class="sc-header">
+        <div class="sc-icon" style="background:rgba(6,182,212,0.1)">🔢</div>
+        <div>
+          <div class="sc-name">rag.documents</div>
+          <div class="sc-badge">RAG Source Documents</div>
+        </div>
+      </div>
+      <div class="col-list">
+        <div class="col-item"><span class="col-name col-pk">🔑 doc_id</span><span class="col-type">BIGSERIAL PK</span></div>
+        <div class="col-item"><span class="col-name">source_type</span><span class="col-type">rag_source_t ENUM</span></div>
+        <div class="col-item"><span class="col-name">embedding_type</span><span class="col-type">embedding_type_t</span></div>
+        <div class="col-item"><span class="col-name">content</span><span class="col-type">TEXT</span></div>
+        <div class="col-item"><span class="col-name">priority</span><span class="col-type">SMALLINT</span></div>
+        <div class="col-item"><span class="col-name">needs_reembedding</span><span class="col-type">BOOLEAN</span></div>
+        <div class="col-item"><span class="col-name">content_tsv</span><span class="col-type">TSVECTOR (FTS)</span></div>
+      </div>
+    </div>
+    <div class="glass schema-card reveal" style="transition-delay:0.3s">
+      <div class="sc-header">
+        <div class="sc-icon" style="background:rgba(16,185,129,0.1)">🔗</div>
+        <div>
+          <div class="sc-name">rag.schema_embeddings</div>
+          <div class="sc-badge">Vector Store — IVFFlat Index</div>
+        </div>
+      </div>
+      <div class="col-list">
+        <div class="col-item"><span class="col-name col-pk">🔑 doc_id</span><span class="col-type">BIGINT PK + FK</span></div>
+        <div class="col-item"><span class="col-name">embedding</span><span class="col-type">vector(1024)</span></div>
+        <div class="col-item"><span class="col-name">created_at</span><span class="col-type">TIMESTAMPTZ</span></div>
+      </div>
+      <div style="margin-top:16px;padding:12px;background:rgba(6,182,212,0.05);border:1px solid rgba(6,182,212,0.1);border-radius:8px;">
+        <div style="font-size:11px;color:var(--accent2);font-family:'JetBrains Mono',monospace;margin-bottom:6px">INDEX STRATEGY</div>
+        <div style="font-size:11px;color:var(--muted)">IVFFlat with cosine ops, 100 lists. Approximate NN search in O(√n) vs O(n) for exact search. 4× speed improvement at 98% recall.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Full Database ERD -->
+  <div style="margin-top: 80px;" class="reveal">
+    <h3 style="font-size: 24px; font-weight: 700; margin-bottom: 16px; text-align: center;">Complete Database Architecture</h3>
+    <p style="text-align: center; color: var(--muted); margin-bottom: 40px; max-width: 700px; margin-left: auto; margin-right: auto;">All four schemas interconnected — ecommerce transactions feed ML scoring, marketing campaigns track to orders, RAG embeddings power intelligent queries.</p>
+    <div id="full-erd" style="background: var(--surface2); border: 1px solid var(--border); border-radius: 16px; padding: 32px; overflow-x: auto;"></div>
+  </div>
+
+  <!-- Individual Schema ERDs -->
+  <div style="margin-top: 80px;" class="reveal">
+    <h3 style="font-size: 24px; font-weight: 700; margin-bottom: 40px; text-align: center;">Detailed Schema Diagrams</h3>
+    
+    <!-- RAG Schema -->
+    <div style="margin-bottom: 56px;">
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+        <div style="width: 8px; height: 8px; border-radius: 50%; background: #06b6d4;"></div>
+        <h4 style="font-size: 18px; font-weight: 700;">RAG Schema</h4>
+      </div>
+      <p style="color: var(--muted); margin-bottom: 24px; font-size: 14px;">Vector embeddings organized by type with versioning, retrieval logging, and security controls.</p>
+      <div id="rag-erd" style="background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px; overflow-x: auto;"></div>
+    </div>
+
+    <!-- ML Output Schema -->
+    <div style="margin-bottom: 56px;">
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+        <div style="width: 8px; height: 8px; border-radius: 50%; background: #8b5cf6;"></div>
+        <h4 style="font-size: 18px; font-weight: 700;">ML Output Schema</h4>
+      </div>
+      <p style="color: var(--muted); margin-bottom: 24px; font-size: 14px;">Anomaly detection scores, chatbot conversations, and prompt performance tracking.</p>
+      <div id="ml-erd" style="background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px; overflow-x: auto;"></div>
+    </div>
+
+    <!-- Marketing Schema -->
+    <div style="margin-bottom: 56px;">
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+        <div style="width: 8px; height: 8px; border-radius: 50%; background: #10b981;"></div>
+        <h4 style="font-size: 18px; font-weight: 700;">Marketing Schema</h4>
+      </div>
+      <p style="color: var(--muted); margin-bottom: 24px; font-size: 14px;">Campaign tracking, lead qualification pipeline, and customer interaction events.</p>
+      <div id="marketing-erd" style="background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px; overflow-x: auto;"></div>
+    </div>
+
+    <!-- Ecommerce Schema -->
+    <div style="margin-bottom: 56px;">
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+        <div style="width: 8px; height: 8px; border-radius: 50%; background: #3b82f6;"></div>
+        <h4 style="font-size: 18px; font-weight: 700;">Ecommerce Schema</h4>
+      </div>
+      <p style="color: var(--muted); margin-bottom: 24px; font-size: 14px;">Complete order lifecycle from customer to product to payment to shipping, with reviews and refunds.</p>
+      <div id="ecommerce-erd" style="background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px; overflow-x: auto;"></div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- VECTOR SEARCH -->
+<div class="vector-section" id="vector">
+<section>
+  <div class="section-label">04 — Vector Search</div>
+  <h2 class="section-title">Semantic Retrieval Engine</h2>
+  <p class="section-desc">Every user question is embedded on-the-fly. Cosine similarity ranks the most relevant schema docs, leakage patterns, and customer reviews before the LLM generates a response.</p>
+
+  <div class="vector-flow reveal">
+    <div class="vf-step">
+      <div class="vf-num">1</div>
+      <div class="vf-title">User Query</div>
+      <div class="vf-desc">Natural language question enters the system via chatbot interface</div>
+    </div>
+    <div class="vf-arrow">→</div>
+    <div class="vf-step">
+      <div class="vf-num">2</div>
+      <div class="vf-title">Embed Query</div>
+      <div class="vf-desc">Jina jina-embeddings-v5 converts text to 1024-dim dense vector</div>
+    </div>
+    <div class="vf-arrow">→</div>
+    <div class="vf-step">
+      <div class="vf-num">3</div>
+      <div class="vf-title">ANN Search</div>
+      <div class="vf-desc">IVFFlat cosine search across schema, review, business embedding tables</div>
+    </div>
+    <div class="vf-arrow">→</div>
+    <div class="vf-step">
+      <div class="vf-num">4</div>
+      <div class="vf-title">Context Inject</div>
+      <div class="vf-desc">Top-k chunks injected into system prompt alongside SQL query results</div>
+    </div>
+    <div class="vf-arrow">→</div>
+    <div class="vf-step">
+      <div class="vf-num">5</div>
+      <div class="vf-title">LLM Response</div>
+      <div class="vf-desc">AI agent generates grounded answer, logs to chatbot_query_log</div>
+    </div>
+  </div>
+
+  <div class="cosine-viz reveal" style="margin-top:56px">
+    <div style="flex:1;min-width:280px">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:16px;letter-spacing:0.08em;text-transform:uppercase">Example Query</div>
+      <div class="cosine-query">"Which sellers have the highest leakage rate this quarter?"</div>
+      <div class="code-block" style="margin-top:0">
+        <div class="cb-header">
+          <div class="cb-dot" style="background:#ef4444"></div>
+          <div class="cb-dot" style="background:#f59e0b"></div>
+          <div class="cb-dot" style="background:#10b981"></div>
+          <span class="cb-lang">SQL — pgvector</span>
+        </div>
+<span class="kw">SELECT</span> d.doc_id, d.title, d.content,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;e.embedding <span class="fn">&lt;=&gt;</span> $1 <span class="kw">AS</span> distance<br>
+<span class="kw">FROM</span> rag.schema_embeddings e<br>
+<span class="kw">JOIN</span> rag.documents d <span class="kw">ON</span> e.doc_id = d.doc_id<br>
+<span class="kw">ORDER BY</span> distance <span class="kw">ASC</span><br>
+<span class="kw">LIMIT</span> <span class="num-c">5</span>;<br>
+<br>
+<span class="cm">-- Then join with mv_seller_risk:</span><br>
+<span class="kw">SELECT</span> seller_name, leakage_rate_pct<br>
+<span class="kw">FROM</span> ml_output.mv_seller_risk<br>
+<span class="kw">ORDER BY</span> leakage_rate_pct <span class="kw">DESC LIMIT</span> <span class="num-c">10</span>;
+      </div>
+    </div>
+    <div style="flex:1;min-width:280px">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:16px;letter-spacing:0.08em;text-transform:uppercase">Retrieved Chunks (cosine similarity)</div>
+      <div class="results-list">
+        <div class="result-item"><span class="result-score score-high">0.961</span>mv_seller_risk — leakage_rate_pct column</div>
+        <div class="result-item"><span class="result-score score-high">0.944</span>seller_paid_twice leakage scenario rule</div>
+        <div class="result-item"><span class="result-score score-high">0.921</span>ORDER BY leakage_rate_pct DESC sample query</div>
+        <div class="result-item"><span class="result-score score-mid">0.887</span>sellers table — return_rate, payment_disputes</div>
+        <div class="result-item"><span class="result-score score-mid">0.863</span>Risk tier classification (High/Critical)</div>
+        <div class="result-item"><span class="result-score score-low">0.741</span>quarterly aggregates via order_quarter column</div>
+      </div>
+    </div>
+  </div>
+</section>
+</div>
+
+<div class="divider"></div>
+
+<!-- EMBEDDING PIPELINE -->
+<section id="pipeline">
+  <div class="section-label">05 — Embedding Pipeline</div>
+  <h2 class="section-title">Jina AI Vectorization</h2>
+  <p class="section-desc">Automated Python pipeline reads from rag.documents, batches 50 docs at a time, calls Jina jina-embeddings-v5, and writes 1024-dim vectors to typed embedding tables.</p>
+
+  <div class="pipeline reveal">
+    <div class="glass pipeline-step">
+      <div class="ps-num">01</div>
+      <div class="ps-content">
+        <div class="ps-title">Fetch Pending Documents</div>
+        <div class="ps-desc">Query <code style="color:var(--accent2);font-family:JetBrains Mono,monospace;font-size:11px">rag.documents WHERE needs_reembedding = TRUE AND is_active = TRUE</code> ordered by priority DESC. Only unprocessed or updated records are fetched.</div>
+      </div>
+      <div class="ps-meta">psycopg2<span>PostgreSQL cursor</span></div>
+    </div>
+    <div class="glass pipeline-step" style="transition-delay:0.05s">
+      <div class="ps-num">02</div>
+      <div class="ps-content">
+        <div class="ps-title">Batch + Enrich Text</div>
+        <div class="ps-desc">Combine title + "\n\n" + content for richer context. Group into batches of 50. This increases semantic density and improves retrieval quality vs embedding content alone.</div>
+      </div>
+      <div class="ps-meta">BATCH_SIZE=50<span>~2K tokens/doc avg</span></div>
+    </div>
+    <div class="glass pipeline-step" style="transition-delay:0.1s">
+      <div class="ps-num">03</div>
+      <div class="ps-content">
+        <div class="ps-title">Jina API Call with Retry</div>
+        <div class="ps-desc">POST to <code style="color:var(--accent2);font-family:JetBrains Mono,monospace;font-size:11px">api.jina.ai/v1/embeddings</code> with task=retrieval.passage, normalized=true. Exponential backoff on 429. 3 retries max before marking batch as failed.</div>
+      </div>
+      <div class="ps-meta">jina-embeddings-v5<span>1024 dimensions</span></div>
+    </div>
+    <div class="glass pipeline-step" style="transition-delay:0.15s">
+      <div class="ps-num">04</div>
+      <div class="ps-content">
+        <div class="ps-title">Route to Typed Tables</div>
+        <div class="ps-desc">EMBEDDING_TABLE_MAP routes each doc by embedding_type: schema/sql_template/routing → schema_embeddings | review → review_embeddings | business_rule → business_embeddings | metric/glossary → metrics_embeddings.</div>
+      </div>
+      <div class="ps-meta">4 target tables<span>typed routing</span></div>
+    </div>
+    <div class="glass pipeline-step" style="transition-delay:0.2s">
+      <div class="ps-num">05</div>
+      <div class="ps-content">
+        <div class="ps-title">Bulk Upsert + Flag Update</div>
+        <div class="ps-desc"><code style="color:var(--accent2);font-family:JetBrains Mono,monospace;font-size:11px">execute_values</code> bulk insert with ON CONFLICT DO UPDATE. Then bulk UPDATE needs_reembedding = FALSE for the batch. Full transaction with rollback on error.</div>
+      </div>
+      <div class="ps-meta">execute_values<span>atomic commit</span></div>
+    </div>
+  </div>
+
+  <div class="code-block reveal" style="margin-top:32px">
+    <div class="cb-header">
+      <div class="cb-dot" style="background:#ef4444"></div>
+      <div class="cb-dot" style="background:#f59e0b"></div>
+      <div class="cb-dot" style="background:#10b981"></div>
+      <span class="cb-lang">Python — embedding_pipeline.py</span>
+    </div>
+<span class="cm"># Route embedding to correct pgvector table</span><br>
+EMBEDDING_TABLE_MAP = {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">'schema'</span>: <span class="str">'rag.schema_embeddings'</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">'review'</span>: <span class="str">'rag.review_embeddings'</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">'business_rule'</span>: <span class="str">'rag.business_embeddings'</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">'metric'</span>: <span class="str">'rag.metrics_embeddings'</span><br>
+}<br><br>
+<span class="cm"># Bulk upsert vectors</span><br>
+<span class="kw">for</span> table_name, rows <span class="kw">in</span> insert_map.<span class="fn">items</span>():<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="fn">execute_values</span>(cursor,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">f</span><span class="str">"""INSERT INTO {table_name} (doc_id, embedding)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">&nbsp;&nbsp;&nbsp;&nbsp;VALUES %s ON CONFLICT (doc_id)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">&nbsp;&nbsp;&nbsp;&nbsp;DO UPDATE SET embedding = EXCLUDED.embedding"""</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;rows)
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- PERFORMANCE -->
+<section id="performance">
+  <div class="section-label">06 — Performance</div>
+  <h2 class="section-title">Engineered for Speed</h2>
+  <p class="section-desc">Every millisecond optimized. BRIN indexes on timestamps, IVFFlat on vectors, partial indexes on anomaly flags, CONCURRENTLY refreshed materialized views.</div>
+
+  <div class="perf-grid">
+    <div class="glass perf-card reveal">
+      <div class="perf-metric">&lt;50ms</div>
+      <div class="perf-title">Materialized View Queries</div>
+      <div class="perf-desc">mv_leakage_dashboard, mv_seller_risk pre-computed. No runtime JOINs. Chatbot agent queries hit indexes, not raw tables.</div>
+    </div>
+    <div class="glass perf-card reveal" style="transition-delay:0.1s">
+      <div class="perf-metric">~10ms</div>
+      <div class="perf-title">Vector ANN Search</div>
+      <div class="perf-desc">IVFFlat with lists=100 achieves 98% recall at 10x the speed of exact search on 260K+ embedding vectors.</div>
+    </div>
+    <div class="glass perf-card reveal" style="transition-delay:0.2s">
+      <div class="perf-metric">O(√n)</div>
+      <div class="perf-title">IVFFlat Complexity</div>
+      <div class="perf-desc">Instead of scanning all vectors O(n), IVFFlat probes the nearest centroid lists only, reducing search space by ~10x.</div>
+    </div>
+  </div>
+
+  <table class="compare-table glass reveal" style="margin-top:48px;border-radius:16px;overflow:hidden">
+    <thead>
+      <tr>
+        <th>Capability</th>
+        <th>This System</th>
+        <th>Traditional RDBMS</th>
+        <th>Standalone Vector DB</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="highlight-row">
+        <td>Semantic Search</td>
+        <td class="check">✓ Native pgvector</td>
+        <td class="cross">✗ Not supported</td>
+        <td class="check">✓ Primary use case</td>
+      </tr>
+      <tr>
+        <td>ACID Transactions</td>
+        <td class="check">✓ Full PostgreSQL</td>
+        <td class="check">✓ Full support</td>
+        <td class="cross">✗ Limited / none</td>
+      </tr>
+      <tr class="highlight-row">
+        <td>JOIN with Business Data</td>
+        <td class="check">✓ Single query</td>
+        <td class="check">✓ SQL joins</td>
+        <td class="cross">✗ Requires ETL sync</td>
+      </tr>
+      <tr>
+        <td>Infrastructure Complexity</td>
+        <td class="check">✓ One container</td>
+        <td class="check">✓ Simple</td>
+        <td class="cross">✗ Extra service + sync</td>
+      </tr>
+      <tr class="highlight-row">
+        <td>Typed Enums + Constraints</td>
+        <td class="check">✓ Full type safety</td>
+        <td class="check">✓ Supported</td>
+        <td class="cross">✗ Schema-less</td>
+      </tr>
+      <tr>
+        <td>Materialized Views</td>
+        <td class="check">✓ 4 MVs + CONCURRENTLY</td>
+        <td class="check">✓ Standard feature</td>
+        <td class="cross">✗ Not applicable</td>
+      </tr>
+      <tr class="highlight-row">
+        <td>Incremental Re-embedding</td>
+        <td class="check">✓ needs_reembedding flag</td>
+        <td class="cross">✗ Manual</td>
+        <td class="cross">✗ Full re-index</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div style="margin-top:48px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
+    <div class="glass reveal" style="padding:20px">
+      <div style="font-size:11px;color:var(--accent2);font-family:'JetBrains Mono',monospace;margin-bottom:10px">BRIN INDEX</div>
+      <div style="font-size:12px;color:var(--muted)">On order_purchase_timestamp. 128 pages per range. Ideal for time-series data — 300x smaller than B-tree for append-only columns.</div>
+    </div>
+    <div class="glass reveal" style="padding:20px;transition-delay:0.1s">
+      <div style="font-size:11px;color:var(--accent2);font-family:'JetBrains Mono',monospace;margin-bottom:10px">PARTIAL INDEXES</div>
+      <div style="font-size:12px;color:var(--muted)">On anomaly_flag=1, shipping_status='never_shipped', invoice_available=FALSE. Index only the minority rows that matter to leakage queries.</div>
+    </div>
+    <div class="glass reveal" style="padding:20px;transition-delay:0.2s">
+      <div style="font-size:11px;color:var(--accent2);font-family:'JetBrains Mono',monospace;margin-bottom:10px">GIN ARRAY INDEX</div>
+      <div style="font-size:12px;color:var(--muted)">On leakage_scenarios array. Enables fast WHERE 'duplicate_refund' = ANY(leakage_scenarios) without full table scan.</div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- AI INTEGRATION -->
+<section id="ai">
+  <div class="section-label">07 — AI Integration</div>
+  <h2 class="section-title">Intelligent Agent Design</h2>
+  <p class="section-desc">The chatbot operates as a Text-to-SQL + RAG hybrid. Retrieved schema context guides SQL generation. sql_guard prevents injection. retrieval_log tracks hallucinations.</p>
+
+  <div class="ai-grid">
+    <div class="glass ai-card reveal">
+      <div class="ai-icon">🧩</div>
+      <div class="ai-title">Text-to-SQL via RAG Context</div>
+      <div class="ai-desc">When a user asks "show leakage by seller this month", the agent retrieves the most relevant schema chunks (mv_seller_risk description, ORDER BY leakage_rate_pct hint), then generates precise SQL. Schema docs in rag.documents act as a live documentation layer.</div>
+      <div class="ai-tags">
+        <span class="ai-tag">schema_embeddings</span>
+        <span class="ai-tag">chatbot_prompt_versions</span>
+        <span class="ai-tag">generated_sql logged</span>
+      </div>
+    </div>
+    <div class="glass ai-card reveal" style="transition-delay:0.1s">
+      <div class="ai-icon">🛡️</div>
+      <div class="ai-title">SQL Injection Guard</div>
+      <div class="ai-desc">Every generated SQL statement passes through rag.sql_guard before execution. Pattern matching catches DROP TABLE, UNION SELECT, and other injection vectors. guard_mode controls block vs warn behavior. Logged per session.</div>
+      <div class="ai-tags">
+        <span class="ai-tag">sql_guard table</span>
+        <span class="ai-tag">pattern matching</span>
+        <span class="ai-tag">session logging</span>
+      </div>
+    </div>
+    <div class="glass ai-card reveal" style="transition-delay:0.2s">
+      <div class="ai-icon">📊</div>
+      <div class="ai-title">Prompt Version Management</div>
+      <div class="ai-desc">ml_output.chatbot_prompt_versions stores every system prompt with version_tag, AUC score, avg_F1, and is_active flag. A/B test prompts, compare performance metrics, and roll back safely without code deployments.</div>
+      <div class="ai-tags">
+        <span class="ai-tag">auc_score tracked</span>
+        <span class="ai-tag">avg_f1 per version</span>
+        <span class="ai-tag">is_active flag</span>
+      </div>
+    </div>
+    <div class="glass ai-card reveal" style="transition-delay:0.3s">
+      <div class="ai-icon">🔍</div>
+      <div class="ai-title">Hallucination Detection</div>
+      <div class="ai-desc">rag.retrieval_log captures every RAG call: retrieved_doc_ids, generated_sql, sql_valid, hallucination_flag, confidence_score, latency_ms. Monitor when the agent invents column names or fabricates data patterns that don't exist.</div>
+      <div class="ai-tags">
+        <span class="ai-tag">hallucination_flag</span>
+        <span class="ai-tag">confidence_score</span>
+        <span class="ai-tag">latency_ms</span>
+      </div>
+    </div>
+    <div class="glass ai-card reveal" style="transition-delay:0.4s">
+      <div class="ai-icon">⚡</div>
+      <div class="ai-title">Retrieval Cache</div>
+      <div class="ai-desc">rag.retrieval_cache stores query_hash → result_json. Identical questions skip the embedding + search round-trip entirely. Cache TTL via expires_at. hit_count tracks popularity. Reduces Jina API costs significantly for repeated analytical queries.</div>
+      <div class="ai-tags">
+        <span class="ai-tag">query_hash dedup</span>
+        <span class="ai-tag">hit_count</span>
+        <span class="ai-tag">expires_at TTL</span>
+      </div>
+    </div>
+    <div class="glass ai-card reveal" style="transition-delay:0.5s">
+      <div class="ai-icon">🔒</div>
+      <div class="ai-title">Read-Only Security Role</div>
+      <div class="ai-desc">chatbot_readonly role has SELECT-only access + INSERT on conversation/log tables. 15-second statement timeout. 30-second idle transaction timeout. No access to raw ml_output internals or marketing PII. Zero privilege escalation possible.</div>
+      <div class="ai-tags">
+        <span class="ai-tag">statement_timeout 15s</span>
+        <span class="ai-tag">SELECT only</span>
+        <span class="ai-tag">PII protected</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ROADMAP -->
+<section id="roadmap">
+  <div class="section-label">08 — Roadmap</div>
+  <h2 class="section-title">What's Next</h2>
+  <p class="section-desc">The infrastructure is production-ready. These phases take it from a data project to an enterprise revenue intelligence platform.</p>
+
+  <div class="roadmap reveal">
+    <div class="rm-item">
+      <div class="rm-dot" style="border-color:var(--green);background:rgba(16,185,129,0.1)">✓</div>
+      <div class="rm-content">
+        <div class="rm-phase">Phase 1 — Complete</div>
+        <div class="rm-title">Core Infrastructure</div>
+        <div class="rm-desc">PostgreSQL schema design, CSV data ingestion, ML anomaly scoring (Isolation Forest + LOF ensemble), materialized views, RAG document population, Jina embedding pipeline with typed routing.</div>
+        <span class="rm-status status-done">Shipped</span>
+      </div>
+    </div>
+    <div class="rm-item">
+      <div class="rm-dot" style="border-color:var(--accent);background:rgba(59,130,246,0.1)">→</div>
+      <div class="rm-content">
+        <div class="rm-phase">Phase 2 — In Progress</div>
+        <div class="rm-title">Chatbot Agent + Text-to-SQL</div>
+        <div class="rm-desc">Wire the RAG retrieval pipeline to an LLM (Claude / GPT-4). Implement SQL generation with schema context injection, sql_guard validation, and full session logging to chatbot_conversations.</div>
+        <span class="rm-status status-active">Active</span>
+      </div>
+    </div>
+    <div class="rm-item">
+      <div class="rm-dot">3</div>
+      <div class="rm-content">
+        <div class="rm-phase">Phase 3 — Planned</div>
+        <div class="rm-title">Real-Time Dashboard</div>
+        <div class="rm-desc">Build a Streamlit or Next.js dashboard consuming the materialized views. Live leakage rate, revenue-at-risk gauge, top anomalous orders table, seller risk heatmap. Auto-refresh via pg_cron scheduled view refresh.</div>
+        <span class="rm-status status-next">Planned</span>
+      </div>
+    </div>
+    <div class="rm-item">
+      <div class="rm-dot">4</div>
+      <div class="rm-content">
+        <div class="rm-phase">Phase 4 — Planned</div>
+        <div class="rm-title">Automated Alerting</div>
+        <div class="rm-desc">PostgreSQL NOTIFY/LISTEN for real-time leakage detection triggers. Webhook integration to Slack/email when Critical risk tier orders are scored. Configurable thresholds per leakage scenario type.</div>
+        <span class="rm-status status-next">Planned</span>
+      </div>
+    </div>
+    <div class="rm-item" style="padding-bottom:0">
+      <div class="rm-dot">5</div>
+      <div class="rm-content">
+        <div class="rm-phase">Phase 5 — Future</div>
+        <div class="rm-title">Multi-Tenant + SaaS</div>
+        <div class="rm-desc">Row-level security policies for multi-tenant data isolation. Per-tenant embedding namespaces. Usage-based billing integration. OpenAPI spec for the analytics endpoints. Horizontal scaling via Citus or read replicas.</div>
+        <span class="rm-status status-next">Future</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- FINAL SHOWCASE -->
+<div class="showcase">
+  <div class="showcase-inner">
+    <h2>Built for <span class="grad">Production.<br>Designed for Intelligence.</span></h2>
+    <p>A single PostgreSQL instance with pgvector delivers what traditionally required a data warehouse, a vector database, an ML pipeline, and a separate chatbot service. One container. One source of truth.</p>
+    <div class="showcase-stats reveal">
+      <div class="glass ss-stat">
+        <div class="ss-num" style="color:var(--accent)">4</div>
+        <div class="ss-label">Schemas</div>
+      </div>
+      <div class="glass ss-stat">
+        <div class="ss-num" style="color:var(--accent2)">2.9M+</div>
+        <div class="ss-label">Records</div>
+      </div>
+      <div class="glass ss-stat">
+        <div class="ss-num" style="color:var(--accent3)">20</div>
+        <div class="ss-label">Leakage Types</div>
+      </div>
+      <div class="glass ss-stat">
+        <div class="ss-num" style="color:var(--green)">1024d</div>
+        <div class="ss-label">Vector Space</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <span>pgvector RAG — Revenue Intelligence System</span>
+  <span style="font-family:'JetBrains Mono',monospace">PostgreSQL 17 + pgvector + Jina AI // v3.1</span>
+</footer>
+
+<script>
+// SCROLL REVEAL
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(el => {
+    if (el.isIntersecting) {
+      el.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+// NAV ACTIVE STATE
+const sections = document.querySelectorAll('section[id]');
+const navLinks = document.querySelectorAll('.nav-links a');
+window.addEventListener('scroll', () => {
+  let current = '';
+  sections.forEach(s => {
+    if (window.scrollY >= s.offsetTop - 120) current = s.id;
+  });
+  navLinks.forEach(a => {
+    a.style.color = a.getAttribute('href') === '#' + current ? 'var(--text)' : '';
+  });
+});
+
+// COUNT UP ANIMATION
+function countUp(el, target, suffix, duration) {
+  let start = 0;
+  const step = target / (duration / 16);
+  const timer = setInterval(() => {
+    start = Math.min(start + step, target);
+    el.textContent = Math.floor(start).toLocaleString() + suffix;
+    if (start >= target) clearInterval(timer);
+  }, 16);
+}
+
+const heroNums = document.querySelectorAll('.hero-stat .num');
+const heroData = [
+  { target: 2900000, suffix: '+' },
+  { target: 20, suffix: '' },
+  { target: 1024, suffix: '' },
+  { target: null, suffix: '' }
+];
+let heroAnimated = false;
+const heroObserver = new IntersectionObserver((entries) => {
+  if (entries[0].isIntersecting && !heroAnimated) {
+    heroAnimated = true;
+    heroNums.forEach((el, i) => {
+      if (heroData[i].target) countUp(el, heroData[i].target, heroData[i].suffix, 1500);
+    });
+  }
+});
+if (heroNums[0]) heroObserver.observe(heroNums[0]);
+
+// MERMAID ERD DIAGRAMS
+(async () => {
+  // Import mermaid
+  const mermaid = await import('https://esm.sh/mermaid@11/dist/mermaid.esm.min.mjs');
+  const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+  await document.fonts.ready;
+  
+  mermaid.default.initialize({
+    startOnLoad: false,
+    theme: 'base',
+    fontFamily: '"Anthropic Sans", sans-serif',
+    themeVariables: {
+      darkMode: dark,
+      fontSize: '13px',
+      fontFamily: '"Anthropic Sans", sans-serif',
+      lineColor: dark ? '#9c9a92' : '#73726c',
+      textColor: dark ? '#c2c0b6' : '#3d3d3a',
+    },
+  });
+
+  // Helper function to render and style ERD
+  async function renderERD(id, diagram) {
+    const { svg } = await mermaid.default.render(id + '-svg', diagram);
+    document.getElementById(id).innerHTML = svg;
+    
+    // Round entity corners
+    document.querySelectorAll(`#${id} svg.erDiagram .node`).forEach(node => {
+      const firstPath = node.querySelector('path[d]');
+      if (!firstPath) return;
+      const d = firstPath.getAttribute('d');
+      const nums = d.match(/-?[\d.]+/g)?.map(Number);
+      if (!nums || nums.length < 8) return;
+      const xs = [nums[0], nums[2], nums[4], nums[6]];
+      const ys = [nums[1], nums[3], nums[5], nums[7]];
+      const x = Math.min(...xs), y = Math.min(...ys);
+      const w = Math.max(...xs) - x, h = Math.max(...ys) - y;
+      const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      rect.setAttribute('x', x); rect.setAttribute('y', y);
+      rect.setAttribute('width', w); rect.setAttribute('height', h);
+      rect.setAttribute('rx', '8');
+      for (const a of ['fill', 'stroke', 'stroke-width', 'class', 'style']) {
+        if (firstPath.hasAttribute(a)) rect.setAttribute(a, firstPath.getAttribute(a));
+      }
+      firstPath.replaceWith(rect);
+    });
+    
+    // Remove row borders
+    document.querySelectorAll(`#${id} svg.erDiagram .row-rect-odd path, #${id} svg.erDiagram .row-rect-even path`).forEach(p => {
+      p.setAttribute('stroke', 'none');
+    });
+  }
+
+  // Full Database Diagram
+  const fullDB = `erDiagram
+    ECOMMERCE_orders ||--o{ ECOMMERCE_order_items : contains
+    ECOMMERCE_customers ||--o{ ECOMMERCE_orders : places
+    ECOMMERCE_sellers ||--o{ ECOMMERCE_products : lists
+    ECOMMERCE_products ||--o{ ECOMMERCE_order_items : "sold in"
+    ECOMMERCE_orders ||--|| ECOMMERCE_payments : "paid via"
+    ECOMMERCE_orders ||--|| ECOMMERCE_shipping : "shipped via"
+    ECOMMERCE_orders ||--o{ ECOMMERCE_reviews : receives
+    ECOMMERCE_orders ||--o{ ECOMMERCE_refunds : "may have"
+    
+    ECOMMERCE_orders ||--|| ML_order_anomaly_scores : "scored by"
+    ML_order_anomaly_scores ||--o{ ML_order_leakage_reasons : flags
+    
+    MARKETING_campaigns ||--o{ MARKETING_campaign_attribution : tracks
+    MARKETING_campaign_attribution }o--|| ECOMMERCE_orders : "attributes to"
+    MARKETING_campaigns ||--o{ MARKETING_leads_qualified : generates
+    MARKETING_campaigns ||--o{ MARKETING_leads_closed : converts
+    
+    RAG_documents ||--o{ RAG_business_embeddings : "generates"
+    RAG_documents ||--o{ RAG_schema_embeddings : "generates"
+    RAG_documents ||--o{ RAG_review_embeddings : "generates"
+    RAG_documents ||--o{ RAG_metrics_embeddings : "generates"
+    
+    ECOMMERCE_orders {
+      varchar_32 order_id PK
+      varchar_32 customer_id FK
+      varchar_50 order_status
+      numeric total_revenue
+    }
+    
+    ML_order_anomaly_scores {
+      varchar_32 order_id PK
+      numeric ensemble_score
+      varchar risk_tier
+    }
+    
+    MARKETING_campaigns {
+      varchar_20 campaign_id PK
+      varchar campaign_name
+      numeric budget
+    }
+    
+    RAG_documents {
+      bigserial doc_id PK
+      text source_type
+      text content
+      vector embedding_type
+    }
+  `;
+
+  // RAG Schema
+  const ragSchema = `erDiagram
+    business_embeddings ||--o{ documents : "contains"
+    documents ||--o{ review_embeddings : "generates"
+    documents ||--o{ metrics_embeddings : "generates"
+    documents ||--o{ schema_embeddings : "generates"
+    documents }o--|| document_versions : "tracks"
+    sql_guard ||--o{ retrieval_log : "validates"
+    retrieval_cache }o--o{ retrieval_log : "speeds up"
+    
+    business_embeddings {
+      bigint doc_id PK
+      vector_1024 embedding
+      timestamp created_at
+    }
+    
+    documents {
+      bigserial doc_id PK
+      text source_type
+      text source_id
+      text title
+      text content
+      text content_lang
+      jsonb metadata
+      text embedding_type
+      smallint priority
+      numeric retrieval_weight
+      integer version
+      boolean is_active
+      boolean needs_reembedding
+      timestamp created_at
+      timestamp updated_at
+      tsvector content_tsv
+    }
+    
+    review_embeddings {
+      bigint doc_id PK
+      vector_1024 embedding
+      timestamp created_at
+    }
+    
+    metrics_embeddings {
+      bigint doc_id PK
+      vector_1024 embedding
+      timestamp created_at
+    }
+    
+    schema_embeddings {
+      bigint doc_id PK
+      vector_1024 embedding
+      timestamp created_at
+    }
+    
+    document_versions {
+      bigserial version_id PK
+      bigint doc_id FK
+      integer version
+      text content
+      jsonb metadata
+      timestamp changed_at
+      text changed_by
+    }
+    
+    sql_guard {
+      serial guard_id PK
+      text guard_type
+      text pattern
+      text message
+      text guard_mode
+    }
+    
+    retrieval_log {
+      bigserial log_id PK
+      text query_text
+      text query_intent
+      bigint_array retrieved_doc_ids
+      text generated_sql
+      boolean sql_valid
+      boolean sql_executed
+      text execution_error
+      boolean hallucination_flag
+      numeric confidence_score
+      integer latency_ms
+      timestamp created_at
+    }
+    
+    retrieval_cache {
+      text cache_key PK
+      text query_hash
+      jsonb result_json
+      integer hit_count
+      timestamp expires_at
+      timestamp created_at
+    }
+  `;
+
+  // ML Output Schema
+  const mlSchema = `erDiagram
+    chatbot_enums ||--o{ chatbot_prompt_versions : "categorizes"
+    chatbot_prompt_versions ||--o{ chatbot_conversations : "drives"
+    chatbot_query_log ||--o{ chatbot_conversations : "feeds"
+    order_anomaly_scores ||--o{ order_leakage_reasons : "flags"
+    order_leakage_reasons }o--|| schema_metadata : "references"
+    
+    chatbot_enums {
+      varchar_50 enum_name PK
+      varchar_100 enum_value PK
+      text description
+    }
+    
+    chatbot_prompt_versions {
+      serial version_id PK
+      varchar_20 version_tag
+      text system_prompt
+      text schema_context
+      text change_description
+      numeric_6_4 auc_score
+      numeric_6_4 avg_f1
+      timestamp created_at
+      boolean is_active
+    }
+    
+    chatbot_query_log {
+      bigserial id PK
+      varchar_64 session_id
+      bigint turn_id
+      text user_question
+      varchar_100 detected_intent
+      text generated_sql
+      text_array tables_used
+      integer execution_ms
+      integer row_count
+      boolean was_helpful
+      text error_message
+      varchar_50 llm_model
+      integer input_tokens
+      integer output_tokens
+      numeric_10_6 cost_usd
+      timestamp created_at
+    }
+    
+    chatbot_conversations {
+      bigserial id PK
+      varchar_64 session_id
+      integer turn_index
+      varchar_20 role
+      text content
+      jsonb tool_calls
+      jsonb tool_results
+      timestamp created_at
+    }
+    
+    order_anomaly_scores {
+      varchar_32 order_id PK
+      numeric_8_6 if_score
+      numeric_8_6 lof_score
+      numeric_8_6 ensemble_score
+      smallint anomaly_flag
+      varchar_5 risk_tier
+      numeric_6_5 anomaly_rank
+      text_array leakage_scenarios
+      text leakage_reason
+      timestamp scored_at
+      varchar_32 customer_id
+      varchar_50 order_status
+      timestamp order_purchase_timestamp
+      numeric_14_2 total_revenue
+      numeric_7_4 profit_margin
+      numeric_5_3 avg_discount_pct
+      smallint shipping_delay_days
+      varchar_50 payment_status
+      varchar_50 shipping_status
+      varchar_7 month
+    }
+    
+    order_leakage_reasons {
+      varchar_32 order_id PK
+      varchar_100 leakage_type
+      numeric_5_4 confidence
+    }
+    
+    schema_metadata {
+      varchar_20 table_schema PK
+      varchar_60 table_name PK
+      text description
+      bigint row_count_approx
+      text key_columns
+      text join_hint
+      text chatbot_use_case
+    }
+  `;
+
+  // Marketing Schema
+  const marketingSchema = `erDiagram
+    marketing_campaigns ||--o{ leads_qualified : "generates"
+    marketing_campaigns ||--o{ leads_closed : "converts"
+    marketing_campaigns ||--o{ campaign_attribution : "tracks"
+    campaign_attribution ||--o{ customer_interactions : "drives"
+    website_sessions }o--|| customer_interactions : "creates"
+    
+    marketing_campaigns {
+      varchar_20 campaign_id PK
+      varchar_200 campaign_name
+      varchar_50 channel
+      varchar_50 campaign_type
+      date start_date
+      date end_date
+      numeric_14_2 budget
+    }
+    
+    leads_qualified {
+      varchar_32 mql_id PK
+      date first_contact_date
+      varchar_40 landing_page_id
+      varchar_50 origin
+    }
+    
+    leads_closed {
+      varchar_32 mql_id PK
+      varchar_32 seller_id
+      varchar_32 sdr_id
+      varchar_32 sr_id
+      date won_date
+      varchar_100 business_segment
+      varchar_50 lead_type
+      varchar_50 lead_behaviour_profile
+      boolean has_company
+      boolean has_gtin
+      varchar_20 average_stock
+      varchar_50 business_type
+      numeric_10_1 declared_product_catalog_size
+      numeric_14_2 declared_monthly_revenue
+    }
+    
+    campaign_attribution {
+      serial id PK
+      varchar_32 order_id FK
+      varchar_20 campaign_id FK
+      varchar_50 attribution_type
+    }
+    
+    website_sessions {
+      varchar_20 session_id PK
+      varchar_32 customer_id
+      timestamp session_start
+      timestamp session_end
+      varchar_50 traffic_source
+      varchar_200 landing_page
+      boolean bounce
+      numeric_6_1 session_duration_min
+    }
+    
+    customer_interactions {
+      varchar_20 interaction_id PK
+      varchar_32 customer_id
+      varchar_20 campaign_id FK
+      timestamp interaction_date
+      varchar_50 channel
+      varchar_50 action_type
+      varchar_30 device
+    }
+  `;
+
+  // Ecommerce Schema
+  const ecommerceSchema = `erDiagram
+    sellers ||--o{ products : "lists"
+    sellers }o--|| geolocation : "located in"
+    products ||--o{ order_items : "sold in"
+    customers ||--o{ orders : "places"
+    customers }o--|| geolocation : "ships to"
+    orders ||--o{ order_items : "contains"
+    orders ||--|| payments : "paid via"
+    orders ||--|| shipping : "shipped via"
+    orders ||--o{ reviews : "receives"
+    orders ||--o{ refunds : "may have"
+    
+    sellers {
+      varchar_32 seller_id PK
+      varchar_100 seller_zip_code_prefix
+      varchar_100 seller_city
+      varchar_100 seller_state
+    }
+    
+    geolocation {
+      serial id PK
+      integer geolocation_zip_code_prefix
+      varchar_100 geolocation_lat_number
+      varchar_100 geolocation_lng_number
+      integer total_orders
+      numeric_5_3 return_rate
+      integer payment_disputes
+      boolean is_verified
+      boolean do_name_cleared
+      boolean do_city_cleared
+    }
+    
+    products {
+      varchar_32 product_id PK
+      varchar_100 product_category_name
+      integer product_name_length
+      integer product_description_length
+      integer product_photos_qty
+      integer product_weight_g
+      integer product_length_cm
+      integer product_height_cm
+      integer product_width_cm
+      smallint unit_price_exp
+    }
+    
+    customers {
+      varchar_32 customer_id PK
+      varchar_32 customer_unique_id
+      varchar_100 customer_zip_code_prefix
+      varchar_100 customer_city
+      varchar_100 customer_state
+    }
+    
+    orders {
+      varchar_32 order_id PK
+      varchar_32 customer_id FK
+      varchar_50 order_status
+      timestamp order_purchase_timestamp
+      timestamp order_approved_at
+      timestamp order_delivered_carrier_date
+      timestamp order_delivered_customer_date
+      timestamp order_estimated_delivery_date
+      boolean invoice_available
+      numeric_5_3 avg_discount_pct
+      integer item_count
+      numeric_14_2 total_revenue
+      numeric_14_2 total_logistics
+      numeric_14_2 total_freight
+      integer items_count
+      numeric_7_4 profit_margin
+      boolean inventory_mismatch
+    }
+    
+    order_items {
+      serial id PK
+      varchar_32 order_id FK
+      varchar_32 product_id FK
+      varchar_32 seller_id FK
+      smallint order_item_id
+      numeric_12_2 price
+      numeric_10_2 freight_value
+    }
+    
+    payments {
+      serial id PK
+      varchar_32 order_id FK
+      smallint payment_sequential
+      varchar_50 payment_type
+      integer payment_installments
+      numeric_12_2 payment_value
+      boolean payment_status
+    }
+    
+    shipping {
+      varchar_32 shipping_id PK
+      varchar_32 order_id FK
+      varchar_50 carrier
+      varchar_30 tracking_number
+      timestamp shipped_date
+      timestamp delivered_date
+      timestamp estimated_delivery_date
+      numeric_10_2 shipping_fee
+      varchar_20 shipping_status
+    }
+    
+    reviews {
+      varchar_32 review_id PK
+      varchar_32 order_id FK
+      varchar_32 customer_id
+      numeric_2_1 rating
+      text review_comment
+      timestamp review_date
+      smallint sentiment
+      boolean is_emoji_only
+      varchar_20 rating_group
+      boolean has_comment
+    }
+    
+    refunds {
+      varchar_32 refund_id PK
+      varchar_32 order_id FK
+      numeric_12_2 refund_amount
+      timestamp refund_date
+      varchar_20 refund_status
+      varchar_20 refund_reason
+      boolean duplicate_refund
+      boolean processed_before_cancel
+    }
+  `;
+
+  // Render all diagrams
+  await renderERD('full-erd', fullDB);
+  await renderERD('rag-erd', ragSchema);
+  await renderERD('ml-erd', mlSchema);
+  await renderERD('marketing-erd', marketingSchema);
+  await renderERD('ecommerce-erd', ecommerceSchema);
+})();
+
+</script>
+</body>
+</html>

@@ -1,0 +1,196 @@
+<style>
+#erd svg.erDiagram .divider path { stroke-opacity: 0.5; }
+#erd svg.erDiagram .row-rect-odd path,
+#erd svg.erDiagram .row-rect-odd rect,
+#erd svg.erDiagram .row-rect-even path,
+#erd svg.erDiagram .row-rect-even rect { stroke: none !important; }
+</style>
+<div id="erd"></div>
+<script type="module">
+import mermaid from 'https://esm.sh/mermaid@11/dist/mermaid.esm.min.mjs';
+const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+await document.fonts.ready;
+mermaid.initialize({
+  startOnLoad: false,
+  theme: 'base',
+  fontFamily: '"Anthropic Sans", sans-serif',
+  themeVariables: {
+    darkMode: dark,
+    fontSize: '13px',
+    fontFamily: '"Anthropic Sans", sans-serif',
+    lineColor: dark ? '#9c9a92' : '#73726c',
+    textColor: dark ? '#c2c0b6' : '#3d3d3a',
+  },
+});
+const { svg } = await mermaid.render('erd-svg', `erDiagram
+  sellers ||--o{ products : "lists"
+  sellers }o--|| geolocation : "located in"
+  products ||--o{ order_items : "sold in"
+  customers ||--o{ orders : "places"
+  customers }o--|| geolocation : "ships to"
+  orders ||--o{ order_items : "contains"
+  orders ||--|| payments : "paid via"
+  orders ||--|| shipping : "shipped via"
+  orders ||--o{ reviews : "receives"
+  orders ||--o{ refunds : "may have"
+  
+  sellers {
+    varchar_32 seller_id PK
+    varchar_100 seller_zip_code_prefix
+    varchar_100 seller_city
+    varchar_100 seller_state
+  }
+  
+  geolocation {
+    serial id PK
+    integer geolocation_zip_code_prefix
+    varchar_100 geolocation_lat_number
+    varchar_100 geolocation_lng_number
+    integer total_orders
+    numeric_5_3 return_rate
+    integer payment_disputes
+    boolean is_verified
+    boolean do_name_cleared
+    boolean do_city_cleared
+  }
+  
+  products {
+    varchar_32 product_id PK
+    varchar_100 product_category_name
+    integer product_name_length
+    integer product_description_length
+    integer product_photos_qty
+    integer product_weight_g
+    integer product_length_cm
+    integer product_height_cm
+    integer product_width_cm
+    smallint unit_price_exp
+  }
+  
+  customers {
+    varchar_32 customer_id PK
+    varchar_32 customer_unique_id
+    varchar_100 customer_zip_code_prefix
+    varchar_100 customer_city
+    varchar_100 customer_state
+  }
+  
+  orders {
+    varchar_32 order_id PK
+    varchar_32 customer_id FK
+    varchar_50 order_status
+    timestamp order_purchase_timestamp
+    timestamp order_approved_at
+    timestamp order_delivered_carrier_date
+    timestamp order_delivered_customer_date
+    timestamp order_estimated_delivery_date
+    boolean invoice_available
+    numeric_5_3 avg_discount_pct
+    boolean item_count
+    numeric_14_2 total_revenue
+    numeric_14_2 total_logistics
+    numeric_14_2 total_freight
+    integer items_count
+    numeric_7_4 profit_margin
+    boolean inventory_mismatch
+    varchar_32 payment_sequential
+    varchar_50 payment_type
+    integer payment_installments
+    numeric_12_2 payment_value
+    varchar_32 payment_last4
+    timestamp payment_status_timestamp
+    boolean seller_paid_twice
+    boolean seller_paid_not_match
+    varchar_50 shipping_id
+    varchar_32 order_id
+    varchar_50 carrier
+    varchar_30 tracking_number
+    timestamp shipped_date
+    timestamp delivered_date
+    timestamp estimated_delivery_date
+    numeric_10_2 shipping_fee
+    varchar_20 shipping_status
+  }
+  
+  order_items {
+    serial id PK
+    varchar_32 order_id FK
+    varchar_32 product_id FK
+    varchar_32 seller_id FK
+    smallint order_item_id
+    numeric_12_2 price
+    numeric_10_2 freight_value
+  }
+  
+  payments {
+    serial id PK
+    varchar_32 order_id FK
+    smallint payment_sequential
+    varchar_50 payment_type
+    integer payment_installments
+    numeric_12_2 payment_value
+    boolean payment_status
+  }
+  
+  shipping {
+    varchar_32 shipping_id PK
+    varchar_32 order_id FK
+    varchar_50 carrier
+    varchar_30 tracking_number
+    timestamp shipped_date
+    timestamp delivered_date
+    timestamp estimated_delivery_date
+    numeric_10_2 shipping_fee
+    varchar_20 shipping_status
+  }
+  
+  reviews {
+    varchar_32 review_id PK
+    varchar_32 order_id FK
+    varchar_32 customer_id
+    numeric_2_1 rating
+    text review_comment
+    timestamp review_date
+    smallint sentiment
+    boolean is_emoji_only
+    varchar_20 rating_group
+    boolean has_comment
+  }
+  
+  refunds {
+    varchar_32 refund_id PK
+    varchar_32 order_id FK
+    numeric_12_2 refund_amount
+    timestamp refund_date
+    varchar_20 refund_status
+    varchar_20 refund_reason
+    boolean duplicate_refund
+    boolean processed_before_cancel
+  }
+`);
+document.getElementById('erd').innerHTML = svg;
+
+document.querySelectorAll('#erd svg.erDiagram .node').forEach(node => {
+  const firstPath = node.querySelector('path[d]');
+  if (!firstPath) return;
+  const d = firstPath.getAttribute('d');
+  const nums = d.match(/-?[\d.]+/g)?.map(Number);
+  if (!nums || nums.length < 8) return;
+  const xs = [nums[0], nums[2], nums[4], nums[6]];
+  const ys = [nums[1], nums[3], nums[5], nums[7]];
+  const x = Math.min(...xs), y = Math.min(...ys);
+  const w = Math.max(...xs) - x, h = Math.max(...ys) - y;
+  const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+  rect.setAttribute('x', x); rect.setAttribute('y', y);
+  rect.setAttribute('width', w); rect.setAttribute('height', h);
+  rect.setAttribute('rx', '8');
+  for (const a of ['fill', 'stroke', 'stroke-width', 'class', 'style']) {
+    if (firstPath.hasAttribute(a)) rect.setAttribute(a, firstPath.getAttribute(a));
+  }
+  firstPath.replaceWith(rect);
+});
+
+document.querySelectorAll('#erd svg.erDiagram .row-rect-odd path, #erd svg.erDiagram .row-rect-even path').forEach(p => {
+  p.setAttribute('stroke', 'none');
+});
+</script>

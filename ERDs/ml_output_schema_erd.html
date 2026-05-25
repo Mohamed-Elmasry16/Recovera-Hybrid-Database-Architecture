@@ -1,0 +1,145 @@
+<style>
+#erd svg.erDiagram .divider path { stroke-opacity: 0.5; }
+#erd svg.erDiagram .row-rect-odd path,
+#erd svg.erDiagram .row-rect-odd rect,
+#erd svg.erDiagram .row-rect-even path,
+#erd svg.erDiagram .row-rect-even rect { stroke: none !important; }
+</style>
+<div id="erd"></div>
+<script type="module">
+import mermaid from 'https://esm.sh/mermaid@11/dist/mermaid.esm.min.mjs';
+const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+await document.fonts.ready;
+mermaid.initialize({
+  startOnLoad: false,
+  theme: 'base',
+  fontFamily: '"Anthropic Sans", sans-serif',
+  themeVariables: {
+    darkMode: dark,
+    fontSize: '13px',
+    fontFamily: '"Anthropic Sans", sans-serif',
+    lineColor: dark ? '#9c9a92' : '#73726c',
+    textColor: dark ? '#c2c0b6' : '#3d3d3a',
+  },
+});
+const { svg } = await mermaid.render('erd-svg', `erDiagram
+  chatbot_enums ||--o{ chatbot_prompt_versions : "categorizes"
+  chatbot_prompt_versions ||--o{ chatbot_conversations : "drives"
+  chatbot_query_log ||--o{ chatbot_conversations : "feeds"
+  order_anomaly_scores ||--o{ order_leakage_reasons : "flags"
+  order_leakage_reasons }o--|| schema_metadata : "references"
+  
+  chatbot_enums {
+    varchar_50 enum_name PK
+    varchar_100 enum_value PK
+    text description
+  }
+  
+  chatbot_prompt_versions {
+    serial version_id PK
+    varchar_20 version_tag
+    text system_prompt
+    text schema_context
+    text change_description
+    numeric_6_4 auc_score
+    numeric_6_4 avg_f1
+    timestamp created_at
+    boolean is_active
+  }
+  
+  chatbot_query_log {
+    bigserial id PK
+    varchar_64 session_id
+    bigint turn_id
+    text user_question
+    varchar_100 detected_intent
+    text generated_sql
+    text_array tables_used
+    integer execution_ms
+    integer row_count
+    boolean was_helpful
+    text error_message
+    text llm_model
+    varchar_50 llm_model
+    integer input_tokens
+    integer output_tokens
+    numeric_10_6 cost_usd
+    timestamp created_at
+  }
+  
+  chatbot_conversations {
+    bigserial id PK
+    varchar_64 session_id
+    integer turn_index
+    varchar_20 role
+    text content
+    jsonb tool_calls
+    jsonb tool_results
+    timestamp created_at
+  }
+  
+  order_anomaly_scores {
+    varchar_32 order_id PK
+    numeric_8_6 if_score
+    numeric_8_6 lof_score
+    numeric_8_6 ensemble_score
+    smallint anomaly_flag
+    varchar_5 risk_tier
+    numeric_6_5 anomaly_rank
+    text_array leakage_scenarios
+    text leakage_reason
+    timestamp scored_at
+    varchar_32 customer_id
+    varchar_50 order_status
+    timestamp order_purchase_timestamp
+    numeric_14_2 total_revenue
+    numeric_7_4 profit_margin
+    numeric_5_3 avg_discount_pct
+    smallint shipping_delay_days
+    varchar_50 payment_status
+    varchar_50 shipping_status
+    varchar_7 month
+  }
+  
+  order_leakage_reasons {
+    varchar_32 order_id PK
+    varchar_100 leakage_type
+    numeric_5_4 confidence
+  }
+  
+  schema_metadata {
+    varchar_20 table_schema PK
+    varchar_60 table_name PK
+    text description
+    bigint row_count_approx
+    text key_columns
+    text join_hint
+    text chatbot_use_case
+  }
+`);
+document.getElementById('erd').innerHTML = svg;
+
+document.querySelectorAll('#erd svg.erDiagram .node').forEach(node => {
+  const firstPath = node.querySelector('path[d]');
+  if (!firstPath) return;
+  const d = firstPath.getAttribute('d');
+  const nums = d.match(/-?[\d.]+/g)?.map(Number);
+  if (!nums || nums.length < 8) return;
+  const xs = [nums[0], nums[2], nums[4], nums[6]];
+  const ys = [nums[1], nums[3], nums[5], nums[7]];
+  const x = Math.min(...xs), y = Math.min(...ys);
+  const w = Math.max(...xs) - x, h = Math.max(...ys) - y;
+  const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+  rect.setAttribute('x', x); rect.setAttribute('y', y);
+  rect.setAttribute('width', w); rect.setAttribute('height', h);
+  rect.setAttribute('rx', '8');
+  for (const a of ['fill', 'stroke', 'stroke-width', 'class', 'style']) {
+    if (firstPath.hasAttribute(a)) rect.setAttribute(a, firstPath.getAttribute(a));
+  }
+  firstPath.replaceWith(rect);
+});
+
+document.querySelectorAll('#erd svg.erDiagram .row-rect-odd path, #erd svg.erDiagram .row-rect-even path').forEach(p => {
+  p.setAttribute('stroke', 'none');
+});
+</script>

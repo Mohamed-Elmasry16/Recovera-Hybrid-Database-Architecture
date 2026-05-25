@@ -1,0 +1,3 @@
+COPY ml_output.order_anomaly_scores (order_id, customer_id, order_status, order_purchase_timestamp, total_revenue, profit_margin, avg_discount_pct, shipping_delay_days, payment_status, shipping_status, if_score, lof_score, ensemble_score, anomaly_flag, risk_tier, anomaly_rank, leakage_reason, month)
+FROM '/tmp/order_anomaly_scores.csv'
+WITH (FORMAT csv, HEADER true, ENCODING 'UTF8', DELIMITER ',', QUOTE '"');

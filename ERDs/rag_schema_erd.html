@@ -1,0 +1,144 @@
+<style>
+#erd svg.erDiagram .divider path { stroke-opacity: 0.5; }
+#erd svg.erDiagram .row-rect-odd path,
+#erd svg.erDiagram .row-rect-odd rect,
+#erd svg.erDiagram .row-rect-even path,
+#erd svg.erDiagram .row-rect-even rect { stroke: none !important; }
+</style>
+<div id="erd"></div>
+<script type="module">
+import mermaid from 'https://esm.sh/mermaid@11/dist/mermaid.esm.min.mjs';
+const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+await document.fonts.ready;
+mermaid.initialize({
+  startOnLoad: false,
+  theme: 'base',
+  fontFamily: '"Anthropic Sans", sans-serif',
+  themeVariables: {
+    darkMode: dark,
+    fontSize: '13px',
+    fontFamily: '"Anthropic Sans", sans-serif',
+    lineColor: dark ? '#9c9a92' : '#73726c',
+    textColor: dark ? '#c2c0b6' : '#3d3d3a',
+  },
+});
+const { svg } = await mermaid.render('erd-svg', `erDiagram
+  business_embeddings ||--o{ documents : "contains"
+  documents ||--o{ review_embeddings : "generates"
+  documents ||--o{ metrics_embeddings : "generates"
+  documents ||--o{ schema_embeddings : "generates"
+  documents }o--|| document_versions : "tracks"
+  sql_guard ||--o{ retrieval_log : "validates"
+  retrieval_cache }o--o{ retrieval_log : "speeds up"
+  
+  business_embeddings {
+    bigint doc_id PK
+    vector_1024 embedding
+    timestamp created_at
+  }
+  
+  documents {
+    bigserial doc_id PK
+    text source_type
+    text source_id
+    text title
+    text content
+    text content_lang
+    jsonb metadata
+    text embedding_type
+    smallint priority
+    numeric retrieval_weight
+    integer version
+    boolean is_active
+    boolean needs_reembedding
+    timestamp created_at
+    timestamp updated_at
+    tsvector content_tsv
+  }
+  
+  review_embeddings {
+    bigint doc_id PK
+    vector_1024 embedding
+    timestamp created_at
+  }
+  
+  metrics_embeddings {
+    bigint doc_id PK
+    vector_1024 embedding
+    timestamp created_at
+  }
+  
+  schema_embeddings {
+    bigint doc_id PK
+    vector_1024 embedding
+    timestamp created_at
+  }
+  
+  document_versions {
+    bigserial version_id PK
+    bigint doc_id FK
+    integer version
+    text content
+    jsonb metadata
+    timestamp changed_at
+    text changed_by
+  }
+  
+  sql_guard {
+    serial guard_id PK
+    text guard_type
+    text pattern
+    text message
+    text guard_mode
+  }
+  
+  retrieval_log {
+    bigserial log_id PK
+    text query_text
+    text query_intent
+    bigint_array retrieved_doc_ids
+    text generated_sql
+    boolean sql_valid
+    boolean sql_executed
+    text execution_error
+    boolean hallucination_flag
+    numeric confidence_score
+    integer latency_ms
+    timestamp created_at
+  }
+  
+  retrieval_cache {
+    text cache_key PK
+    text query_hash
+    jsonb result_json
+    integer hit_count
+    timestamp expires_at
+    timestamp created_at
+  }
+`);
+document.getElementById('erd').innerHTML = svg;
+
+document.querySelectorAll('#erd svg.erDiagram .node').forEach(node => {
+  const firstPath = node.querySelector('path[d]');
+  if (!firstPath) return;
+  const d = firstPath.getAttribute('d');
+  const nums = d.match(/-?[\d.]+/g)?.map(Number);
+  if (!nums || nums.length < 8) return;
+  const xs = [nums[0], nums[2], nums[4], nums[6]];
+  const ys = [nums[1], nums[3], nums[5], nums[7]];
+  const x = Math.min(...xs), y = Math.min(...ys);
+  const w = Math.max(...xs) - x, h = Math.max(...ys) - y;
+  const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+  rect.setAttribute('x', x); rect.setAttribute('y', y);
+  rect.setAttribute('width', w); rect.setAttribute('height', h);
+  rect.setAttribute('rx', '8');
+  for (const a of ['fill', 'stroke', 'stroke-width', 'class', 'style']) {
+    if (firstPath.hasAttribute(a)) rect.setAttribute(a, firstPath.getAttribute(a));
+  }
+  firstPath.replaceWith(rect);
+});
+
+document.querySelectorAll('#erd svg.erDiagram .row-rect-odd path, #erd svg.erDiagram .row-rect-even path').forEach(p => {
+  p.setAttribute('stroke', 'none');
+});
+</script>
