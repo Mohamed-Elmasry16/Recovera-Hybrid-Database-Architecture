@@ -8,7 +8,7 @@
 
 <a href="#-quick-start"><img src="https://img.shields.io/badge/Quick%20Start-5min%20setup-22C55E?style=for-the-badge&logo=rocket&logoColor=white"/></a>
 <a href="#-architecture"><img src="https://img.shields.io/badge/Architecture-4%20schemas-7C3AED?style=for-the-badge&logo=databricks&logoColor=white"/></a>
-<a href="#-data--downloads"><img src="https://img.shields.io/badge/Data-Drive%20Download-F59E0B?style=for-the-badge&logo=googledrive&logoColor=white"/></a>
+<a href="#-dataset--database-backup"><img src="https://img.shields.io/badge/Dataset-Google%20Drive-4285F4?style=for-the-badge&logo=google-drive&logoColor=white"/></a>
 
 <br/><br/>
 
@@ -18,17 +18,20 @@
 [![Jina AI](https://img.shields.io/badge/Jina_AI_Embeddings_v5-FF6F61?style=flat-square)](https://jina.ai)
 [![Docker](https://img.shields.io/badge/Docker_Ready-2496ED?style=flat-square&logo=docker&logoColor=white)](https://docker.com)
 [![License](https://img.shields.io/badge/License-MIT-10B981?style=flat-square)](LICENSE)
+[![Data](https://img.shields.io/badge/Dataset-Google_Drive-4285F4?style=flat-square&logo=google-drive&logoColor=white)](https://drive.google.com/drive/u/1/folders/1Kt4_jRISTsfQi03oQsEN8bIr1DnwfuJg)
 
 <br/>
 
-| | | | |
-|:---:|:---:|:---:|:---:|
-| **2.9M+** records | **1,024-dim** vectors | **< 50ms** MV queries | **20** leakage scenarios |
-| **4** schemas | **37K+** embedded docs | **~10ms** ANN search | **13** SQL guard rules |
+| | |
+|:---:|:---:|
+| **2.9M+** records | **1,024-dim** vectors |
+| **< 50ms** MV queries | **20** leakage scenarios |
+| **4** schemas | **37K+** embedded documents |
+| **~10ms** ANN search | **13** SQL guard rules |
 
 <br/>
 
-[Architecture](#-architecture) · [Database Design](#-database-design) · [Vector & RAG](#-vector-database--rag) · [SQL Agent](#-sql-agent--chatbot) · [Performance](#-performance) · [Data & Downloads](#-data--downloads) · [Quick Start](#-quick-start) · [Queries](#-example-queries) · [Roadmap](#-roadmap)
+[Architecture](#-architecture) · [Database Design](#-database-design) · [Vector & RAG](#-vector-database--rag) · [SQL Agent](#-sql-agent--chatbot) · [Performance](#-performance) · [Setup](#-quick-start) · [Dataset](#-dataset--database-backup) · [Queries](#-example-queries) · [Roadmap](#-roadmap)
 
 </div>
 
@@ -94,19 +97,19 @@ All of it in a single PostgreSQL 17 container. No data warehouse. No separate ve
 
 ```mermaid
 flowchart LR
-    A["📥 Raw CSV\nIngestion"]:::step --> B["🗄️ PostgreSQL\necommerce schema"]:::step
-    B --> C["🤖 ML Scoring\nIF + LOF Ensemble"]:::step
-    C --> D["📊 Materialized\nViews x4"]:::step
-    D --> E["🔢 Jina AI\n1024-dim Embeddings"]:::step
-    E --> F["🧩 pgvector\nRAG Store"]:::step
-    F --> G["💬 AI Agent\nText-to-SQL"]:::step
+    A["Raw CSV Ingestion"]:::step --> B["PostgreSQL ecommerce schema"]:::step
+    B --> C["ML Scoring IF and LOF Ensemble"]:::step
+    C --> D["Materialized Views x4"]:::step
+    D --> E["Jina AI 1024-dim Embeddings"]:::step
+    E --> F["pgvector RAG Store"]:::step
+    F --> G["AI Agent Text-to-SQL"]:::step
 
-    classDef step fill:#1e293b,stroke:#334155,color:#f8fafc
+    classDef step fill:#1e293b,stroke:#334155,color:#f8fafc,rx:8
 ```
 
 ### Why One Container Beats Three Services
 
-| What you would normally need | What this system uses |
+| What you'd normally need | What this system uses |
 |:---|:---|
 | ❌ Data warehouse for aggregate analytics | ✅ 4 materialized views, CONCURRENT refresh |
 | ❌ Pinecone / Qdrant for vector search | ✅ pgvector, native SQL joins |
@@ -233,26 +236,26 @@ erDiagram
 
 ```mermaid
 flowchart TD
-    SRC["rag.documents\n(Source of Truth)"]:::src
+    SRC["rag.documents Source of Truth"]:::src
 
     SRC -->|schema| SE["schema_embeddings"]:::emb
     SRC -->|business_rule| BE["business_embeddings"]:::emb
     SRC -->|metric| ME["metrics_embeddings"]:::emb
     SRC -->|review| RE["review_embeddings"]:::emb
 
-    SE --> HS["Hybrid Search\nBM25 x0.4 + Cosine x0.6"]:::fuse
+    SE --> HS["Hybrid Search BM25 and Cosine"]:::fuse
     BE --> HS
     ME --> HS
     RE --> HS
 
-    HS --> PW["Priority Weighting\nSource Diversity cap\nmax 2 per source_type"]:::rank
+    HS --> PW["Priority Weighting and Source Diversity"]:::rank
     PW --> CTX["Top-k to LLM Context"]:::out
 
-    classDef src  fill:#1e3a5f,stroke:#2563eb,color:#eff6ff
-    classDef emb  fill:#1e3a2f,stroke:#16a34a,color:#f0fdf4
+    classDef src fill:#1e3a5f,stroke:#2563eb,color:#eff6ff
+    classDef emb fill:#1e3a2f,stroke:#16a34a,color:#f0fdf4
     classDef fuse fill:#3b2a00,stroke:#ca8a04,color:#fefce8
     classDef rank fill:#2a1a3e,stroke:#7c3aed,color:#faf5ff
-    classDef out  fill:#1a2e1a,stroke:#22c55e,color:#f0fdf4
+    classDef out fill:#1a2e1a,stroke:#22c55e,color:#f0fdf4
 ```
 
 ### Document Types & Priorities
@@ -269,7 +272,7 @@ flowchart TD
 ### Hybrid Search — Core Algorithm
 
 ```sql
--- BM25 (keyword) x0.4  +  Cosine Similarity (vector) x0.6
+-- BM25 (keyword) × 0.4  +  Cosine Similarity (vector) × 0.6
 -- with source-type diversity enforcement
 WITH bm25 AS (
     SELECT doc_id,
@@ -307,7 +310,7 @@ sequenceDiagram
     P  ->> DB: SELECT WHERE needs_reembedding = TRUE
     DB -->> P: Batch of 50 documents
 
-    P  ->> P:  Build enriched text (title prepended to content)
+    P  ->> P:  Enrich document (title and newline and content)
 
     P  ->> J:  POST /v1/embeddings (task=retrieval.passage)
     J  -->> P: 1024-dim float vectors
@@ -316,7 +319,7 @@ sequenceDiagram
     P  ->> DB: execute_values() bulk upsert to embedding tables
     P  ->> DB: UPDATE needs_reembedding = FALSE
 
-    Note over P,DB: Atomic transaction — full rollback on failure
+    Note over P,DB: Atomic transaction — rollback on failure
     Note over P,DB: 100x faster than full re-index
 ```
 
@@ -338,9 +341,10 @@ sequenceDiagram
     participant D  as rag.documents
     participant MV as Materialized Views
     participant G  as rag.sql_guard
-    participant LM as LLM
+    participant LM as LLM (Claude / GPT-4)
 
     U  ->> CA: Natural language query
+
     CA ->> J:  Embed query to 1024-dim vector
     J  -->> CA: Query vector
 
@@ -354,7 +358,7 @@ sequenceDiagram
         MV -->> CA: SQL result set under 50ms
     end
 
-    CA ->> LM: context window with schema docs, SQL results, query
+    CA ->> LM: Context window with schema docs, SQL results, and query
     LM -->> CA: Generated SQL and narrative
 
     CA ->> G:  rag.validate_sql(generated_sql)
@@ -367,34 +371,34 @@ sequenceDiagram
 
 ```mermaid
 flowchart TD
-    Q[User Query] --> I{Intent\nClassification}
+    Q[User Query] --> I{Intent Classification}
 
-    I -->|simple_lookup|         MV1[mv_leakage_dashboard]
-    I -->|aggregation|           MV2[mv_leakage_by_scenario]
-    I -->|trend_analysis|        MV3[mv_monthly_leakage]
-    I -->|seller_risk|           MV4[mv_seller_risk]
+    I -->|simple_lookup| MV1[mv_leakage_dashboard]
+    I -->|aggregation| MV2[mv_leakage_by_scenario]
+    I -->|trend_analysis| MV3[mv_monthly_leakage]
+    I -->|seller_risk| MV4[mv_seller_risk]
     I -->|anomaly_investigation| RAG[Hybrid RAG Search]
-    I -->|sentiment_analysis|    RE[review_embeddings]
+    I -->|sentiment_analysis| RE[review_embeddings]
 
     MV1 --> SQL[SQL Generation]
     MV2 --> SQL
     MV3 --> SQL
     MV4 --> SQL
     RAG --> CTX[Context Injection]
-    RE  --> CTX
+    RE --> CTX
 
-    SQL --> G{sql_guard\nValidation}
+    SQL --> G{sql_guard Validation}
     CTX --> LLM[LLM Response]
 
-    G -->|PASS|  EX[Execute and Log]
+    G -->|PASS| EX[Execute and Log]
     G -->|BLOCK| ER[Error and Suggestion]
 
     EX --> LLM
     LLM --> R[Response to User]
 
-    style G   fill:#78350f,stroke:#f59e0b,color:#fef3c7
-    style ER  fill:#7f1d1d,stroke:#ef4444,color:#fef2f2
-    style R   fill:#14532d,stroke:#22c55e,color:#f0fdf4
+    style G fill:#f59e0b,stroke:#d97706
+    style ER fill:#ef4444,stroke:#dc2626
+    style R fill:#22c55e,stroke:#16a34a
 ```
 
 ### SQL Guard in Action
@@ -408,14 +412,15 @@ SELECT * FROM rag.validate_sql(
 
 ```
  error_type  │  token          │  message
-─────────────┼─────────────────┼──────────────────────────────────────────
- fake_column │ orders.amount   │ Column does not exist.
-             │                 │ Did you mean orders.total_revenue?
+─────────────┼─────────────────┼─────────────────────────────────────────────
+ fake_column │ orders.amount   │ Column does not exist. Did you mean
+             │                 │ orders.total_revenue?
 ```
 
 The `chatbot_readonly` role enforces hard limits at the database level:
 
 ```sql
+-- Role created at schema install time
 CREATE ROLE chatbot_readonly NOLOGIN;
 GRANT USAGE ON SCHEMA ecommerce, ml_output, rag TO chatbot_readonly;
 GRANT SELECT ON ALL TABLES IN SCHEMA ml_output TO chatbot_readonly;
@@ -431,8 +436,8 @@ ALTER ROLE chatbot_readonly SET statement_timeout = '15s';
 
 | Index | Table / Column | Strategy | Gain |
 |:---|:---|:---|:---|
-| **IVFFlat** | `*_embeddings.embedding` | `lists=100` ANN search | 4x faster · 98% recall |
-| **BRIN** | `orders.order_purchase_timestamp` | 128 pages/range | 300x smaller than B-tree |
+| **IVFFlat** | `*_embeddings.embedding` | `lists=100` ANN search | 4× faster · 98% recall |
+| **BRIN** | `orders.order_purchase_timestamp` | 128 pages/range | 300× smaller than B-tree |
 | **Partial** | `anomaly_flag = 1` | Index only leakage rows | Fraction of full index size |
 | **Partial** | `shipping_status = 'never_shipped'` | Target specific failure mode | Near-instant filter |
 | **GIN** | `leakage_scenarios[]` | Array element lookup | Fast `= ANY()` queries |
@@ -451,8 +456,8 @@ ALTER ROLE chatbot_readonly SET statement_timeout = '15s';
 │  Retrieval cache hit             │  < 1ms       │  query_hash dedup │
 │  Embedding pipeline (37K docs)   │  ~12 min     │  50 docs/batch    │
 │  Incremental re-embed            │  < 10s       │  needs_reembedding│
-│  IVFFlat complexity              │  O(sqrt n)   │  centroid probing │
-│  BRIN vs B-tree size             │  300x smaller│  128 pg/range     │
+│  IVFFlat complexity              │  O(√n)       │  centroid probing │
+│  BRIN vs B-tree size             │  300× smaller│  128 pg/range     │
 └──────────────────────────────────┴──────────────┴───────────────────┘
 ```
 
@@ -470,7 +475,7 @@ WHERE  anomaly_flag = 1
 AND    risk_tier    = 'Critical'
 ORDER  BY ensemble_score DESC
 LIMIT  50;
--- Returns in < 50ms — zero runtime JOINs.
+-- ↳ 0 runtime JOINs. Returns in < 50ms.
 ```
 
 ---
@@ -517,30 +522,6 @@ revenue-intelligence-rag/
 │
 └── README.md
 ```
-
----
-
-## 📦 Data & Downloads
-
-All project files, raw CSVs, and the full database backup are available on Google Drive:
-
-> **[📂 Download all files and DB backup →](https://drive.google.com/drive/u/1/folders/1Kt4_jRISTsfQi03oQsEN8bIr1DnwfuJg)**
-
-The Drive folder contains:
-
-| Item | Description |
-|:---|:---|
-| `*.csv` | Raw e-commerce source data (orders, customers, payments, etc.) |
-| `db_backup.dump` | Full `pg_dump` of the populated database (all 4 schemas) |
-| `schema_output/` | Pre-generated agent context files (~38KB LLM context) |
-| `erds/` | Interactive HTML ERDs for all schemas |
-| `presentations/` | Architecture slide deck (`.pptx` + `.html`) |
-
-> [!NOTE]
-> To restore the database backup directly without running the full embedding pipeline (~12 min), use:
-> ```bash
-> pg_restore -h localhost -p 5433 -U postgres -d revenue_leakage db_backup.dump
-> ```
 
 ---
 
@@ -616,9 +597,6 @@ INFO  ════════════════════════�
 INFO  COMPLETE — 37,266 embedded · 0 errors
 ```
 
-> [!TIP]
-> Skip steps 2–4 entirely by restoring from the database backup in the [Drive folder](#-data--downloads). Full pipeline takes ~12 minutes; the backup restores in under a minute.
-
 ### 5 — Verify
 
 ```sql
@@ -638,6 +616,57 @@ GROUP  BY 1;
 SELECT * FROM rag.hybrid_search(
     'duplicate refund detection', NULL, NULL, 5
 );
+```
+
+> [!NOTE]
+> Full pipeline on 37K documents takes ~12 minutes on first run. Subsequent incremental syncs (changed documents only) complete in under 10 seconds.
+
+---
+
+
+---
+
+## 📦 Dataset & Database Backup
+
+All project data, CSV files, and the full database backup are available in the shared Google Drive folder:
+
+<p align="center">
+  <a href="https://drive.google.com/drive/u/1/folders/1Kt4_jRISTsfQi03oQsEN8bIr1DnwfuJg">
+    <img src="https://img.shields.io/badge/Google_Drive-Data_%26_Backup-4285F4?style=for-the-badge&logo=google-drive&logoColor=white" alt="Google Drive Data Folder"/>
+  </a>
+</p>
+
+### What's Inside
+
+| File / Folder | Description | Size |
+|:---|:---|:---|
+| `ecommerce_data/` | Raw CSV files (orders, customers, payments, shipping, reviews, refunds, products, sellers) | ~180 MB |
+| `marketing_data/` | Campaign attribution, sessions, interactions, leads | ~95 MB |
+| `revenue_leakage_backup.sql` | Full PostgreSQL 17 database dump with all schemas, data, indexes, and embeddings | ~2.1 GB |
+| `schema/` | SQL schema scripts (identical to `schema/` in repo) | ~45 KB |
+| `README_DATA.md` | Data dictionary and column descriptions | ~12 KB |
+
+### Quick Restore from Backup
+
+```bash
+# Download the backup file from Google Drive, then:
+docker exec -i revenue-rag psql -U postgres -d revenue_leakage < revenue_leakage_backup.sql
+
+# Verify restore
+psql -h localhost -p 5433 -U postgres -d revenue_leakage -c "\dt ecommerce.*"
+```
+
+> [!NOTE]
+> The backup includes **all 37K+ pre-computed embeddings**, so you can skip the 12-minute embedding pipeline on first setup.
+
+### CSV Import (Alternative)
+
+If you prefer to build from raw CSVs instead of the full backup:
+
+```bash
+# Place CSV files in a local directory, then run:
+psql -h localhost -p 5433 -U postgres -d revenue_leakage -f schema/ecommerce_schema.sql
+psql -h localhost -p 5433 -U postgres -d revenue_leakage -f schema/final.sql
 ```
 
 ---
@@ -711,15 +740,6 @@ ORDER  BY month DESC
 LIMIT  12;
 ```
 
-### SQL Guard validation
-
-```sql
-SELECT * FROM rag.validate_sql(
-    'SELECT SUM(orders.amount) FROM ecommerce.payments WHERE order_id = ''X'''
-);
--- Returns: fake_column | orders.amount | Column does not exist. Use orders.total_revenue
-```
-
 ---
 
 ## 🧠 Engineering Decisions
@@ -736,7 +756,7 @@ Embeddings live in the same ACID transaction as the business data they describe.
 <details>
 <summary><b>Why IVFFlat over HNSW?</b></summary>
 
-At 260K vectors, IVFFlat with `lists=100` delivers 98% recall at 4x the speed of exact search, with dramatically faster build times during the batch embedding pipeline. HNSW achieves higher recall at extreme scale but takes longer to build and consumes more memory.
+At 260K vectors, IVFFlat with `lists=100` delivers 98% recall at 4× the speed of exact search, with dramatically faster build times during the batch embedding pipeline. HNSW achieves higher recall at extreme scale but takes longer to build and consumes more memory.
 
 **Trade-off:** HNSW is the right migration target beyond ~10M vectors. The switchover is a single `CREATE INDEX` statement.
 
@@ -795,13 +815,13 @@ Phase 5  🔮  Multi-tenant SaaS · row-level security · Citus horizontal scali
 
 ```bash
 # Fork → clone → branch
-git clone https://github.com/MohamedWaleedElmasry/revenue-intelligence-rag.git
+git clone https://github.com/your-org/revenue-intelligence-rag.git
 git checkout -b feat/your-feature
 
 # Make changes, then open a PR against main
 ```
 
-Good first contributions: new leakage scenario documents · additional `sql_guard` rules · HyDE retrieval experiment · Streamlit dashboard prototype · test coverage for `hybrid_search()`.
+**Good first contributions:** new leakage scenario documents · additional `sql_guard` rules · HyDE retrieval experiment · Streamlit dashboard prototype · test coverage for `hybrid_search()`.
 
 Please read `docs/ARCHITECTURE_DECISIONS.md` before modifying any schema.
 
@@ -815,7 +835,7 @@ MIT — see [LICENSE](LICENSE).
 
 ## 👤 Author
 
-**Mohamed Waleed Elmasry**  
+**Mohamed Waleed Elmasry**
 AI Engineer & Database Architect
 
 [![GitHub](https://img.shields.io/badge/GitHub-MohamedWaleedElmasry-181717?style=flat-square&logo=github)](https://github.com/MohamedWaleedElmasry)
