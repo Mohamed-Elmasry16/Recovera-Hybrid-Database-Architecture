@@ -25,6 +25,7 @@
 [![Jina AI](https://img.shields.io/badge/Jina_AI_Embeddings_v5-FF6F61?style=flat-square)](https://jina.ai)
 [![Docker](https://img.shields.io/badge/Docker_Ready-2496ED?style=flat-square&logo=docker&logoColor=white)](https://docker.com)
 [![License](https://img.shields.io/badge/License-MIT-10B981?style=flat-square)](LICENSE)
+[![Data](https://img.shields.io/badge/Dataset-Google_Drive-4285F4?style=flat-square&logo=google-drive&logoColor=white)](https://drive.google.com/drive/u/1/folders/1Kt4_jRISTsfQi03oQsEN8bIr1DnwfuJg)
 
 <br/>
 
@@ -37,7 +38,7 @@
 
 <br/>
 
-[Architecture](#-architecture) · [Database Design](#-database-design) · [Vector & RAG](#-vector-database--rag) · [SQL Agent](#-sql-agent--chatbot) · [Performance](#-performance) · [Setup](#-quick-start) · [Queries](#-example-queries) · [Roadmap](#-roadmap)
+[Architecture](#-architecture) · [Database Design](#-database-design) · [Vector & RAG](#-vector-database--rag) · [SQL Agent](#-sql-agent--chatbot) · [Performance](#-performance) · [Setup](#-quick-start) · [Dataset](#-dataset--database-backup) · [Queries](#-example-queries) · [Roadmap](#-roadmap)
 
 </div>
 
@@ -313,17 +314,17 @@ sequenceDiagram
     P  ->> DB: SELECT WHERE needs_reembedding = TRUE
     DB -->> P: Batch of 50 documents
 
-    P  ->> P:  Enrich: title + "\n\n" + content
+    P  ->> P:  Enrich document (title and newline and content)
 
     P  ->> J:  POST /v1/embeddings (task=retrieval.passage)
     J  -->> P: 1024-dim float vectors
 
     P  ->> P:  Validate dimensions
-    P  ->> DB: execute_values() bulk upsert → embedding tables
+    P  ->> DB: execute_values() bulk upsert to embedding tables
     P  ->> DB: UPDATE needs_reembedding = FALSE
 
-    Note over P,DB: Atomic transaction — full rollback on failure
-    Note over P,DB: 100× faster than full re-index
+    Note over P,DB: Atomic transaction — rollback on failure
+    Note over P,DB: 100x faster than full re-index
 ```
 
 > [!TIP]
@@ -348,26 +349,26 @@ sequenceDiagram
 
     U  ->> CA: Natural language query
 
-    CA ->> J:  Embed query → 1024-dim vector
+    CA ->> J:  Embed query to 1024-dim vector
     J  -->> CA: Query vector
 
     par Semantic Retrieval
         CA ->> PV: IVFFlat cosine search
         PV -->> CA: Top-k document IDs
-        CA ->> D:  Fetch schema docs + business rules
+        CA ->> D:  Fetch schema docs and business rules
         D  -->> CA: Grounding context
     and Structured Analytics
         CA ->> MV: Query pre-computed views
-        MV -->> CA: SQL result set  (<50ms)
+        MV -->> CA: SQL result set under 50ms
     end
 
-    CA ->> LM: context window: schema docs + SQL results + query
-    LM -->> CA: Generated SQL + narrative
+    CA ->> LM: Context window with schema docs, SQL results, and query
+    LM -->> CA: Generated SQL and narrative
 
     CA ->> G:  rag.validate_sql(generated_sql)
-    G  -->> CA: ✅ PASS  or  ❌ BLOCK + correction hint
+    G  -->> CA: PASS or BLOCK with correction hint
 
-    CA -->> U: Grounded answer + SQL evidence + session log
+    CA -->> U: Grounded answer with SQL evidence and session log
 ```
 
 ### Intent → Data Source Routing
@@ -619,6 +620,54 @@ SELECT * FROM rag.hybrid_search(
 
 > [!NOTE]
 > Full pipeline on 37K documents takes ~12 minutes on first run. Subsequent incremental syncs (changed documents only) complete in under 10 seconds.
+
+---
+
+
+---
+
+## 📦 Dataset & Database Backup
+
+All project data, CSV files, and the full database backup are available in the shared Google Drive folder:
+
+<p align="center">
+  <a href="https://drive.google.com/drive/u/1/folders/1Kt4_jRISTsfQi03oQsEN8bIr1DnwfuJg">
+    <img src="https://img.shields.io/badge/Google_Drive-Data_%26_Backup-4285F4?style=for-the-badge&logo=google-drive&logoColor=white" alt="Google Drive Data Folder"/>
+  </a>
+</p>
+
+### What's Inside
+
+| File / Folder | Description | Size |
+|:---|:---|:---|
+| `ecommerce_data/` | Raw CSV files (orders, customers, payments, shipping, reviews, refunds, products, sellers) | ~180 MB |
+| `marketing_data/` | Campaign attribution, sessions, interactions, leads | ~95 MB |
+| `revenue_leakage_backup.sql` | Full PostgreSQL 17 database dump with all schemas, data, indexes, and embeddings | ~2.1 GB |
+| `schema/` | SQL schema scripts (identical to `schema/` in repo) | ~45 KB |
+| `README_DATA.md` | Data dictionary and column descriptions | ~12 KB |
+
+### Quick Restore from Backup
+
+```bash
+# Download the backup file from Google Drive, then:
+docker exec -i revenue-rag psql -U postgres -d revenue_leakage < revenue_leakage_backup.sql
+
+# Verify restore
+psql -h localhost -p 5433 -U postgres -d revenue_leakage -c "\dt ecommerce.*"
+```
+
+> [!NOTE]
+> The backup includes **all 37K+ pre-computed embeddings**, so you can skip the 12-minute embedding pipeline on first setup.
+
+### CSV Import (Alternative)
+
+If you prefer to build from raw CSVs instead of the full backup:
+
+```bash
+# Place CSV files in a local directory, then run:
+psql -h localhost -p 5433 -U postgres -d revenue_leakage -f schema/ecommerce_schema.sql
+psql -h localhost -p 5433 -U postgres -d revenue_leakage -f schema/final.sql
+```
 
 ---
 
